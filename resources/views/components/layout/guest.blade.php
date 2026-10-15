@@ -16,11 +16,6 @@
     <div class="page page-center">
       <div class="container container-tight py-4">
 
-        <!-- Encabezado del Logo -->
-        <div class="text-center mb-4">
-            <x-logo />
-        </div>
-
         {{ $slot }}
         
         </div>

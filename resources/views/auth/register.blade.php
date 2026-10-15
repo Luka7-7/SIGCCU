@@ -1,5 +1,11 @@
 <x-layout.guest title="Crea una cuenta en - SIGCCU">
 
+
+    <!-- Encabezado del Logo -->
+    <div class="text-center mb-4">
+        <x-logo />
+    </div>
+
     <div class="card p-5" x-data="{ 
             step: 1, 
             perfil: '{{ old('perfil_inicial', 'estudiante') }}',
@@ -192,6 +198,4 @@
         </div>
     </div>
 
-
-
-    </x-guest>
+    </x-layout.guest>

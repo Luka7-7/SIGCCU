@@ -1,6 +1,11 @@
 <x-layout.guest title="Accede · SIGCCU">
-    <div class="card p-5">
 
+        <!-- Encabezado del Logo -->
+        <div class="text-center mb-4">
+            <x-logo />
+        </div>
+
+    <div class="card p-5">
         <div class="card-body px-0">
             <h1 class="text-center mb-4">Acceso a la plataforma</h1>
 
@@ -56,4 +61,4 @@
             <a href="{{ route('register') }}" class="btn btn-outline-secondary w-100">Regístrate</a>
         </div>
     </div>
-    </x-guest>
+    </x-layout.guest>
