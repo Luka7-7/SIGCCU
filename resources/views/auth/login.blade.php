@@ -4,11 +4,12 @@
         <div class="card-body px-0">
             <h1 class="text-center mb-4">Acceso a la plataforma</h1>
 
-            <form class="mt-4">
+            <form class="mt-4" method="POST" action="{{ route('login.store') }}">
+                @csrf
                 <!-- Email o Matrícula -->
                 <div class="mb-3">
                     <label class="form-label">Correo electrónico</label>
-                    <input type="text" class="form-control" placeholder="Ej. usuario@uan.edu.mx">
+                    <input type="email" name="email" class="form-control" placeholder="Ej. usuario@uan.edu.mx">
                 </div>
 
                 <!-- Contraseña -->
@@ -20,7 +21,7 @@
                         </span>
                     </label>
                     <div class="input-group input-group-flat">
-                        <input type="password" class="form-control" placeholder="Ingresa la contraseña"
+                        <input type="password" name="password" class="form-control" placeholder="Ingresa la contraseña"
                             autocomplete="off">
                         <span class="input-group-text">
                             <a href="#" class="link-secondary">
