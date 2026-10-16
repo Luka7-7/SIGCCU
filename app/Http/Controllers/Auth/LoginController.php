@@ -45,7 +45,7 @@ class LoginController extends Controller
         RateLimiter::clear($key);
         $request->session()->regenerate(); // evita fijación de sesión
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route('usuario.perfil'));
     }
 
     public function destroy(Request $request)

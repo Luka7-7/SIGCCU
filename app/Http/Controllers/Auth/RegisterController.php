@@ -75,6 +75,6 @@ class RegisterController extends Controller
 
         Auth::login($usuario);
 
-        return redirect('/dashboard'); // ajusta a tu ruta
+        return redirect('/usuario.perfil'); // ajusta a tu ruta
     }
 }

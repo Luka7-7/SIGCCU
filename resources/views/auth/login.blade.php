@@ -13,6 +13,13 @@
             <h1 class="h2 text-center">Acceso a la plataforma</h1>
             <form class="mt-4" method="POST" action="{{ route('login.store') }}">
                 @csrf
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
+                    </div>
+                @endif
                 <!-- Email o Matrícula -->
                 <div class="mb-3">
                     <label class="form-label">Correo electrónico</label>
