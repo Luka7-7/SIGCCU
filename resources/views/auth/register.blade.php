@@ -1,19 +1,13 @@
 <x-layout.guest title="Crea una cuenta en - SIGCCU">
 
-
-    <!-- Encabezado del Logo -->
-    <div class="text-center mb-4">
-        <x-logo />
-    </div>
-
-    <div class="card p-5" x-data="{ 
+    <div class="card card-md" x-data="{ 
             step: 1, 
             perfil: '{{ old('perfil_inicial', 'estudiante') }}',
             showPassword: false,
             showPasswordConfirm: false 
         }">
-        <div class="card-body px-0">
-            <h1 class="text-center mb-4">Crear cuenta</h1>
+        <div class="card-body">
+            <h1 class="h2 text-center mb-4">Registrate en SIGCCU</h1>
             <p class="text-secondary mt-2">Tus datos están protegidos y serán tratados con confidencialidad.</p>
 
             <form class="mt-4" action="{{ route('register') }}" method="POST">
@@ -33,7 +27,7 @@
                                         <span class="form-selectgroup-check"></span>
                                     </div>
                                     <div>
-                                        <span class="me-2"><i class="ti ti-school fs-2"></i></span>Estudiante
+                                        <span class="me-2"><i class="ti ti-school fs-2"></i></span> Estudiante
                                     </div>
                                 </div>
                             </label>
@@ -69,7 +63,7 @@
 
                     <!-- Botón Continuar Paso 1 -->
                     <div class="form-footer">
-                        <button type="button" class="btn btn-primary w-100 py-2 fs-3"
+                        <button type="button" class="btn btn-primary w-100"
                             @click="step = 2">Continuar</button>
                     </div>
 
@@ -130,9 +124,9 @@
 
                     <!-- Botones Continuar Paso 2 -->
                     <div class="form-footer d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary w-50 py-2 fs-3"
+                        <button type="button" class="btn btn-outline-secondary w-50"
                             @click="step = 1">Anterior</button>
-                        <button type="button" class="btn btn-primary w-50 py-2 fs-3"
+                        <button type="button" class="btn btn-primary w-50"
                             @click="step = 3">Continuar</button>
                     </div>
                 </div>
@@ -187,9 +181,9 @@
 
                     <!-- Botones Anterior y Crear cuenta -->
                     <div class="form-footer d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary w-50 py-2 fs-3"
+                        <button type="button" class="btn btn-outline-secondary w-50"
                             @click="step = 2">Anterior</button>
-                        <button type="submit" class="btn btn-primary w-50 py-2 fs-3">Crear cuenta</button>
+                        <button type="submit" class="btn btn-primary w-50">Crear cuenta</button>
                     </div>
                 </div>
 
