@@ -1,2 +1,17 @@
 @import '@tabler/core/dist/css/tabler.min.css';
 @import "@tabler/icons-webfont/dist/tabler-icons.min.css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+:root {
+    --tblr-font-sans-serif: "Inter" !important;
+}
+
+/* Desactiva el icono del ojo en Microsoft Edge e Internet Explorer */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+span > a {
+    color: #7D96A4;
+}
