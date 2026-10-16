@@ -5,9 +5,9 @@
             <x-logo />
         </div>
 
-    <div class="card p-5">
-        <div class="card-body px-0">
-            <h1 class="text-center mb-4">Acceso a la plataforma</h1>
+    <div class="card card-md">
+        <div class="card-body">
+            <h1 class="text-center">Acceso a la plataforma</h1>
 
             <form class="mt-4" method="POST" action="{{ route('login.store') }}">
                 @csrf
@@ -22,7 +22,7 @@
                     <label class="form-label">
                         Contraseña
                         <span class="form-label-description">
-                            <a href="#">¿Olvidaste la contraseña?</a>
+                            <a href="{{ route('fogot') }}">¿Olvidaste la contraseña?</a>
                         </span>
                     </label>
                     <div class="input-group input-group-flat">
@@ -46,14 +46,14 @@
                 <!-- Checkbox Recordar -->
                 <div class="mb-3">
                     <label class="form-check">
-                        <input type="checkbox" class="form-check-input" />
+                        <input type="checkbox" class="form-check-input" data-bs-toggle="tooltip" data-bs-placement="right" title="Si activas esta opción tu cuenta permanecera abierta durante más tiempo." />
                         <span class="form-check-label">Mantener cuenta abierta</span>
                     </label>
                 </div>
 
                 <!-- Botón Iniciar Sesión -->
                 <div class="form-footer">
-                    <button type="submit" class="btn btn-primary w-100 py-2 fs-3">Iniciar sesión</button>
+                    <button type="submit" class="btn btn-primary w-100">Iniciar sesión</button>
                 </div>
             </form>
 
