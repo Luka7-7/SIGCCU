@@ -1,7 +1,6 @@
 <?php
 
 // Ubicación: app/Http/Controllers/PerfilController.php
-// El namespace DEBE coincidir con la carpeta (evita el error "Cannot redeclare class").
 
 namespace App\Http\Controllers;
 
@@ -12,7 +11,7 @@ use Illuminate\Validation\Rule;
 
 class PerfilController extends Controller
 {
-    // Valores permitidos (los mismos del ENUM de la base y del registro)
+    // Valores permitidos
     private const AREAS = [
         'artes'                                => 'Artes',
         'ciencias basicas e ingenierias'       => 'Ciencias Básicas e Ingenierías',
@@ -62,7 +61,7 @@ class PerfilController extends Controller
             ->where('usuario_id', $usuario->id)
             ->count();
 
-        return view('usuario.perfil', [
+        return view('user.settings', [
             'usuario'          => $usuario,
             'inscripciones'    => $inscripciones,
             'propuestas'       => $propuestas,
@@ -76,7 +75,6 @@ class PerfilController extends Controller
 
     /**
      * Actualiza los datos personales y académicos.
-     * El rol y la institución no se pueden editar desde aquí.
      */
     public function update(Request $request)
     {
@@ -92,21 +90,22 @@ class PerfilController extends Controller
         }
 
         $reglasIdentificador = $requiereIdentificador
-            ? ['required', 'string', 'max:8']
+            ? ['required', 'string', 'max:20']
             : ['nullable'];
 
+        // Sincronizamos 'matricula' (nombre en el HTML) con las reglas
         $data = $request->validate([
-            'nombres'                 => ['required', 'string', 'max:70'],
-            'apellidos'               => ['required', 'string', 'max:80'],
-            'email'                   => $reglasCorreo,
-            'matricula_numtrabajador' => $reglasIdentificador,
-            'area'                    => ['required', Rule::in(array_keys(self::AREAS))],
-            'unidad_academica'        => ['required', Rule::in($this->conActual(self::UNIDADES, $usuario->unidad_academica))],
-            'nombre_carrera'          => ['required', Rule::in($this->conActual(self::PROGRAMAS, $usuario->nombre_carrera))],
+            'nombres'          => ['required', 'string', 'max:70'],
+            'apellidos'        => ['required', 'string', 'max:80'],
+            'email'            => $reglasCorreo,
+            'matricula'        => $reglasIdentificador,
+            'area'             => ['required', Rule::in(array_keys(self::AREAS))],
+            'unidad_academica' => ['required', Rule::in($this->conActual(self::UNIDADES, $usuario->unidad_academica))],
+            'nombre_carrera'   => ['required', Rule::in($this->conActual(self::PROGRAMAS, $usuario->nombre_carrera))],
         ], [
-            'email.unique'                     => 'Este correo ya está registrado.',
-            'email.ends_with'                  => 'Debes usar tu correo institucional (@uan.edu.mx).',
-            'matricula_numtrabajador.required' => $usuario->rol === 'docente'
+            'email.unique'       => 'Este correo ya está registrado.',
+            'email.ends_with'    => 'Debes usar tu correo institucional (@uan.edu.mx).',
+            'matricula.required' => $usuario->rol === 'docente'
                 ? 'El número de empleado es obligatorio.'
                 : 'La matrícula es obligatoria.',
         ]);
@@ -115,19 +114,19 @@ class PerfilController extends Controller
             'nombres'                 => $data['nombres'],
             'apellidos'               => $data['apellidos'],
             'correo_electronico'      => $data['email'],
-            'matricula_numtrabajador' => $requiereIdentificador ? $data['matricula_numtrabajador'] : null,
+            'matricula_numtrabajador' => $requiereIdentificador ? $data['matricula'] : null,
             'area'                    => $data['area'],
             'unidad_academica'        => $data['unidad_academica'],
             'nombre_carrera'          => $data['nombre_carrera'],
         ])->save();
 
         return redirect()
-            ->route('perfil')
+            ->route('profile.update')
             ->with('status', 'Tus datos se guardaron correctamente.');
     }
 
     /**
-     * Cambia la contraseña (pide la actual por seguridad).
+     * Cambia la contraseña.
      */
     public function updatePassword(Request $request)
     {
@@ -147,12 +146,12 @@ class PerfilController extends Controller
         $request->session()->regenerate();
 
         return redirect()
-            ->route('usuario.perfil')
+            ->route('settings')
             ->with('status', 'Tu contraseña se actualizó correctamente.');
     }
 
     /**
-     * Agrega el valor actual del usuario a la lista, por si no está en las opciones conocidas.
+     * Agrega el valor actual a la lista si no está presente.
      */
     private function conActual(array $opciones, ?string $actual): array
     {

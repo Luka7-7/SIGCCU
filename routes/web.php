@@ -9,9 +9,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
 
-    Route::get('/perfil', [PerfilController::class, 'show'])->name('perfil');
-    Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
-    Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
+    Route::get('/profile', fn () => view('user.profile'))->name('profile');
+    Route::get('/profile/settings', [PerfilController::class, 'show'])->name('settings');
+    Route::put('/profile/settings', [PerfilController::class, 'update'])->name('profile.update');
+
+    // Route::get('/perfil', [PerfilController::class, 'show'])->name('perfil');
+    // Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
+    // Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
 });
 Route::middleware('guest')->group(function () {
     Route::get('/', fn () => view('auth.login'))->name('login');
