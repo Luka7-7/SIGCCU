@@ -14,8 +14,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/settings', [PerfilController::class, 'update'])->name('profile.update');
 
     // Route::get('/perfil', [PerfilController::class, 'show'])->name('perfil');
-    // Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
-    // Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
+    Route::get('/perfil', fn () => redirect()->route('profile'))->name('usuario.perfil');
 });
 Route::middleware('guest')->group(function () {
     Route::get('/', fn () => view('auth.login'))->name('login');
@@ -24,9 +23,4 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/register', fn () => view('auth.register'))->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
-});
-
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
 });

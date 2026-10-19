@@ -23,7 +23,7 @@
                 <!-- Email o Matrícula -->
                 <div class="mb-3">
                     <label class="form-label">Correo electrónico</label>
-                    <input type="email" name="email" class="form-control" placeholder="Ej. usuario@uan.edu.mx">
+                    <input type="email" name="email" value="{{ old('email') }}" class="form-control" placeholder="Ej. usuario@uan.edu.mx" required autofocus>
                 </div>
 
                 <!-- Contraseña -->
@@ -36,7 +36,7 @@
                     </label>
                     <div class="input-group input-group-flat">
                         <input :type="showPassword ? 'text' : 'password'" type="password" name="password" class="form-control" placeholder="Ingresa la contraseña"
-                            autocomplete="off">
+                            autocomplete="off" required>
                              <span class="input-group-text">
                                 <a href="#" class="input-group-link" @click.prevent="showPassword = !showPassword"
                                     x-text="showPassword ? 'Ocultar' : 'Mostrar'"></a>
@@ -47,7 +47,7 @@
                 <!-- Checkbox Recordar -->
                 <div class="mb-3">
                     <label class="form-check">
-                        <input type="checkbox" class="form-check-input" data-bs-toggle="tooltip" data-bs-placement="right" title="Si activas esta opción tu cuenta permanecera abierta durante más tiempo." />
+                        <input type="checkbox" name="remember" class="form-check-input" data-bs-toggle="tooltip" data-bs-placement="right" title="Si activas esta opción tu cuenta permanecera abierta durante más tiempo." />
                         <span class="form-check-label">Mantener cuenta abierta</span>
                     </label>
                 </div>

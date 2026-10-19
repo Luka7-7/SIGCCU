@@ -20,6 +20,7 @@ class Usuario extends Authenticatable
         'unidad_academica',
         'nombre_carrera',
         'area',
+        'activo',
     ];
 
     protected $hidden = ['contrasena'];
@@ -28,5 +29,16 @@ class Usuario extends Authenticatable
     public function getAuthPassword()
     {
         return $this->contrasena;
+    }
+
+    // La tabla no tiene columna remember_token
+    public function getRememberTokenName()
+    {
+        return '';
+    }
+
+    public function getEmailForPasswordReset()
+    {
+        return $this->correo_electronico;
     }
 }

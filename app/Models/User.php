@@ -48,4 +48,14 @@ protected $table = 'usuarios';
             'password' => 'hashed',
         ];
     }
+
+    public function getAuthPassword()
+    {
+        return $this->contrasena;
+    }
+
+    public function getRememberTokenName()
+    {
+        return '';
+    }
 }
