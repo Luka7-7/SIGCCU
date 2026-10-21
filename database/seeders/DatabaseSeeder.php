@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ConstanciasSeeder::class,
             EvaluadoresSeeder::class,
             PropuestasSeeder::class,
+            ComentariosPropuestasSeeder::class,
         ]);
     }
 }

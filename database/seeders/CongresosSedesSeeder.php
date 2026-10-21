@@ -9,11 +9,11 @@ class CongresosSedesSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('congresos_sedes')->insert([
+        DB::table('congresos_sedes')->upsert([
             ['congreso_id' => 1, 'sede_id' => 1],
             ['congreso_id' => 1, 'sede_id' => 2],
             ['congreso_id' => 2, 'sede_id' => 3],
             ['congreso_id' => 3, 'sede_id' => 1],
-        ]);
+        ], ['congreso_id', 'sede_id']);
     }
 }

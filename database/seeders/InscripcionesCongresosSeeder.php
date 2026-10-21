@@ -9,7 +9,7 @@ class InscripcionesCongresosSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('inscripciones_congresos')->insert([
+        DB::table('inscripciones_congresos')->upsert([
             ['usuario_id' => 1, 'congreso_id' => 1, 'fecha_hora_inscripcion' => '2026-08-01 09:00:00', 'aceptado' => 1, 'fecha_hora_respuesta' => '2026-08-01 09:05:00', 'rol_congreso' => 'organizador'],
             ['usuario_id' => 5, 'congreso_id' => 1, 'fecha_hora_inscripcion' => '2026-08-02 10:00:00', 'aceptado' => 1, 'fecha_hora_respuesta' => '2026-08-03 12:00:00', 'rol_congreso' => 'comite'],
             ['usuario_id' => 2, 'congreso_id' => 1, 'fecha_hora_inscripcion' => '2026-09-10 11:30:00', 'aceptado' => 1, 'fecha_hora_respuesta' => '2026-09-11 08:00:00', 'rol_congreso' => 'asistente y/o ponente'],
@@ -18,6 +18,6 @@ class InscripcionesCongresosSeeder extends Seeder
             ['usuario_id' => 6, 'congreso_id' => 2, 'fecha_hora_inscripcion' => '2025-07-02 09:00:00', 'aceptado' => 1, 'fecha_hora_respuesta' => '2025-07-02 10:00:00', 'rol_congreso' => 'organizador'],
             ['usuario_id' => 4, 'congreso_id' => 2, 'fecha_hora_inscripcion' => '2025-08-15 13:00:00', 'aceptado' => 1, 'fecha_hora_respuesta' => '2025-08-16 09:00:00', 'rol_congreso' => 'asistente y/o ponente'],
             ['usuario_id' => 7, 'congreso_id' => 2, 'fecha_hora_inscripcion' => '2025-08-20 10:30:00', 'aceptado' => 1, 'fecha_hora_respuesta' => '2025-08-21 09:00:00', 'rol_congreso' => 'comite'],
-        ]);
+        ], ['usuario_id', 'congreso_id'], ['fecha_hora_inscripcion', 'aceptado', 'fecha_hora_respuesta', 'rol_congreso']);
     }
 }

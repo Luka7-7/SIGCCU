@@ -12,7 +12,7 @@ class UsuariosSeeder extends Seeder
     {
         $password = Hash::make('password');
 
-        DB::table('usuarios')->insert([
+        DB::table('usuarios')->upsert([
             [
                 'id' => 1, 'correo_electronico' => 'admin@congresos.test', 'contrasena' => $password,
                 'nombres' => 'Administrador', 'apellidos' => 'General', 'rol' => 'administrador',
@@ -76,6 +76,6 @@ class UsuariosSeeder extends Seeder
                 'unidad_academica' => 'Unidad Académica de Artes', 'nombre_carrera' => 'Licenciatura en Artes Visuales',
                 'activo' => 0, 'area' => 'artes',
             ],
-        ]);
+        ], ['id'], ['correo_electronico', 'contrasena', 'nombres', 'apellidos', 'rol', 'institucion', 'matricula_numtrabajador', 'unidad_academica', 'nombre_carrera', 'activo', 'area']);
     }
 }

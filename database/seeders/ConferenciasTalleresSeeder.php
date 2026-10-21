@@ -9,7 +9,7 @@ class ConferenciasTalleresSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('conferencias_talleres')->insert([
+        DB::table('conferencias_talleres')->upsert([
             [
                 'id' => 1, 'descripcion' => 'Conferencia magistral: Inteligencia artificial y sociedad.',
                 'tipo' => 'conferencia', 'cupo' => 300, 'ubicacion' => 'Auditorio Central',
@@ -46,6 +46,6 @@ class ConferenciasTalleresSeeder extends Seeder
                 'fecha' => '2025-10-15', 'hora_inicio' => '10:00:00', 'hora_fin' => '13:00:00',
                 'congreso_id' => 2, 'qr_link' => 'qr/chs-taller-6',
             ],
-        ]);
+        ], ['id'], ['descripcion', 'tipo', 'cupo', 'ubicacion', 'fecha', 'hora_inicio', 'hora_fin', 'congreso_id', 'qr_link']);
     }
 }

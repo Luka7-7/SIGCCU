@@ -9,7 +9,7 @@ class CongresosSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('congresos')->insert([
+        DB::table('congresos')->upsert([
             [
                 'id' => 1, 'nombre' => 'Congreso Internacional de Ciencia y Tecnología', 'siglas' => 'CICYT',
                 'edicion' => 3, 'fecha_inicio' => '2026-11-18', 'fecha_fin' => '2026-11-20',
@@ -34,6 +34,6 @@ class CongresosSeeder extends Seeder
                 'logo_url' => null, 'minimo_talleres' => 2, 'minimo_conferencias' => 3,
                 'eje_tematico' => 'Salud comunitaria', 'dictamen' => null,
             ],
-        ]);
+        ], ['id'], ['nombre', 'siglas', 'edicion', 'fecha_inicio', 'fecha_fin', 'registro_abre', 'registro_cierre', 'descripcion', 'logo_url', 'minimo_talleres', 'minimo_conferencias', 'eje_tematico', 'dictamen']);
     }
 }
