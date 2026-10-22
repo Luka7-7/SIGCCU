@@ -9,6 +9,7 @@ class SedesSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::table('sedes')->insert([
         DB::table('sedes')->upsert([
             [
                 'id' => 1, 'nombre' => 'Auditorio Central', 'direccion' => 'Av. Universidad #100, Col. Centro',
@@ -25,6 +26,7 @@ class SedesSeeder extends Seeder
                 'ciudad' => 'Zapopan', 'estado' => 'Jalisco',
                 'url_ubicacion' => 'https://maps.google.com/?q=Unidad+Academica+Humanidades',
             ],
+        ]);
         ], ['id'], ['nombre', 'direccion', 'ciudad', 'estado', 'url_ubicacion']);
     }
 }

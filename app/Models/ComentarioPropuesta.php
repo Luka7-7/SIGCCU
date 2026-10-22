@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ComentarioPropuesta extends Model
 {
@@ -14,5 +15,10 @@ class ComentarioPropuesta extends Model
         'Comentario',
         'propuestas_id',
     ];
-}
 
+    // Propuesta a la que pertenece este comentario
+    public function propuesta(): BelongsTo
+    {
+        return $this->belongsTo(Propuesta::class, 'propuestas_id');
+    }
+}

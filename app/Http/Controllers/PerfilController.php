@@ -21,12 +21,189 @@ class PerfilController extends Controller
         'ciencias sociales y humanidades'      => 'Ciencias Sociales y Humanidades',
     ];
 
-    private const UNIDADES = [
+    // Catálogo de Unidades Académicas y sus Programas Académicos (Carreras)
+    public const UNIDADES_PROGRAMAS = [
+        'Unidad Académica de Ahuacatlán' => [
+            'Licenciatura en Contaduría',
+            'Licenciatura en Administración',
+            'Licenciatura en Enfermería',
+        ],
+        'Unidad Académica de Bahía de Banderas' => [
+            'Licenciatura en Administración',
+            'Licenciatura en Contaduría',
+            'Licenciatura en Ciencias de la Educación',
+            'Licenciatura en Derecho',
+            'Licenciatura en Psicología',
+        ],
+        'Unidad Académica de Ixtlán' => [
+            'Licenciatura en Administración',
+            'Licenciatura en Ciencias de la Educación',
+            'Licenciatura en Contaduría',
+            'Licenciatura en Derecho',
+        ],
+        'Unidad Académica de Agricultura' => [
+            'Licenciatura en Agricultura',
+            'Licenciatura en Biología',
+        ],
+        'Unidad Académica de Artes' => [
+            'Licenciatura en Música',
+            'Licenciatura en Diseño Urbano y Edificación',
+        ],
+        'Unidad Académica de Ciencias Básicas e Ingenierías' => [
+            'Ingeniería en Automatización y Sistemas Inteligentes',
+            'Ingeniería en Electrónica',
+            'Ingeniería en Mecánica',
+            'Ingeniería Química',
+            'Licenciatura en Matemáticas',
+        ],
+        'Unidad Académica de Ciencias Sociales' => [
+            'Licenciatura en Psicología',
+            'Licenciatura en Comunicación y Medios',
+            'Licenciatura en Ciencias Políticas y Gobierno',
+            'Licenciatura en Estudios Coreanos',
+        ],
+        'Unidad Académica de Ciencias Químico, Biológicas y Farmacéuticas' => [
+            'Licenciatura en Químico Farmacobiólogo',
+        ],
+        'Unidad Académica de Contaduría y Administración' => [
+            'Licenciatura en Contaduría',
+            'Licenciatura en Administración',
+            'Licenciatura en Mercadotecnia',
+            'Licenciatura en Negocios Internacionales',
+            'Licenciatura en Administración Pública',
+        ],
+        'Unidad Académica de Derecho' => [
+            'Licenciatura en Derecho',
+        ],
+        'Unidad Académica de Economía' => [
+            'Licenciatura en Economía',
+            'Licenciatura en Seguridad Informática',
+            'Licenciatura en Sistemas Computacionales',
+            'Licenciatura en Proyectos de Tecnologías de Información e Innovación Digital',
+        ],
+        'Unidad Académica de Educación y Humanidades' => [
+            'Licenciatura en Ciencias de la Educación',
+            'Licenciatura en Filosofía',
+            'Licenciatura en Lingüística Aplicada',
+            'Licenciatura en Educación Infantil',
+            'Licenciatura en Educación Inicial y Gestión de Instituciones',
+            'Licenciatura en Estudios y Creación Literaria',
+        ],
+        'Unidad Académica de Enfermería' => [
+            'Licenciatura en Enfermería',
+        ],
+        'Unidad Académica de Ingeniería Pesquera' => [
+            'Ingeniería Pesquera',
+            'Ingeniería en Acuicultura',
+        ],
+        'Unidad Académica de Medicina' => [
+            'Licenciatura en Médico Cirujano',
+        ],
+        'Unidad Académica de Medicina Veterinaria y Zootecnia' => [
+            'Licenciatura en Medicina Veterinaria y Zootecnia',
+        ],
+        'Unidad Académica de Turismo' => [
+            'Licenciatura en Gastronomía',
+            'Licenciatura en Gestión e Innovación del Turismo Escolarizado',
+            'Licenciatura en Gestión e Innovación del Turismo Semiescolarizado',
+        ],
+        'Unidad Académica de Odontología' => [
+            'Licenciatura en Cirujano Dentista',
+        ],
+        'Unidad Académica de Salud Integral' => [
+            'Licenciatura en Nutrición',
+            'Licenciatura en Cultura Física y Deporte',
+            'Licenciatura en Terapia Física',
+        ],
+        'Centro Especializado de Educación Virtual' => [
+            'Licenciatura en Biomedicina Ambiental Traslacional Escolarizado',
+            'Licenciatura en Administración Pública en línea',
+            'Licenciatura en Gestión Empresarial en línea',
+            'Licenciatura en Derecho en línea',
+            'Licenciatura en Contaduría en línea',
+            'Licenciatura en Administración en línea',
+            'Licenciatura en Creación de Negocios en línea',
+        ],
+        'Unidad Académica de Ciencias e Ingenierías' => [
+            'Ingeniería en Computación',
+        ],
+    ];
+
+    public const UNIDADES = [
+        'Unidad Académica de Ahuacatlán',
+        'Unidad Académica de Bahía de Banderas',
+        'Unidad Académica de Ixtlán',
+        'Unidad Académica de Agricultura',
+        'Unidad Académica de Artes',
+        'Unidad Académica de Ciencias Básicas e Ingenierías',
+        'Unidad Académica de Ciencias Sociales',
+        'Unidad Académica de Ciencias Químico, Biológicas y Farmacéuticas',
+        'Unidad Académica de Contaduría y Administración',
+        'Unidad Académica de Derecho',
+        'Unidad Académica de Economía',
+        'Unidad Académica de Educación y Humanidades',
+        'Unidad Académica de Enfermería',
+        'Unidad Académica de Ingeniería Pesquera',
+        'Unidad Académica de Medicina',
+        'Unidad Académica de Medicina Veterinaria y Zootecnia',
+        'Unidad Académica de Turismo',
+        'Unidad Académica de Odontología',
+        'Unidad Académica de Salud Integral',
+        'Centro Especializado de Educación Virtual',
         'Unidad Académica de Ciencias e Ingenierías',
     ];
 
-    private const PROGRAMAS = [
+    public const PROGRAMAS = [
+        'Ingeniería en Automatización y Sistemas Inteligentes',
         'Ingeniería en Computación',
+        'Ingeniería en Electrónica',
+        'Ingeniería en Mecánica',
+        'Ingeniería Pesquera',
+        'Ingeniería Química',
+        'Ingeniería en Acuicultura',
+        'Licenciatura en Administración',
+        'Licenciatura en Administración Pública',
+        'Licenciatura en Administración Pública en línea',
+        'Licenciatura en Administración en línea',
+        'Licenciatura en Agricultura',
+        'Licenciatura en Biología',
+        'Licenciatura en Biomedicina Ambiental Traslacional Escolarizado',
+        'Licenciatura en Ciencias Políticas y Gobierno',
+        'Licenciatura en Ciencias de la Educación',
+        'Licenciatura en Cirujano Dentista',
+        'Licenciatura en Comunicación y Medios',
+        'Licenciatura en Contaduría',
+        'Licenciatura en Contaduría en línea',
+        'Licenciatura en Creación de Negocios en línea',
+        'Licenciatura en Cultura Física y Deporte',
+        'Licenciatura en Derecho',
+        'Licenciatura en Derecho en línea',
+        'Licenciatura en Diseño Urbano y Edificación',
+        'Licenciatura en Economía',
+        'Licenciatura en Educación Infantil',
+        'Licenciatura en Educación Inicial y Gestión de Instituciones',
+        'Licenciatura en Enfermería',
+        'Licenciatura en Estudios Coreanos',
+        'Licenciatura en Estudios y Creación Literaria',
+        'Licenciatura en Filosofía',
+        'Licenciatura en Gastronomía',
+        'Licenciatura en Gestión Empresarial en línea',
+        'Licenciatura en Gestión e Innovación del Turismo Escolarizado',
+        'Licenciatura en Gestión e Innovación del Turismo Semiescolarizado',
+        'Licenciatura en Lingüística Aplicada',
+        'Licenciatura en Matemáticas',
+        'Licenciatura en Medicina Veterinaria y Zootecnia',
+        'Licenciatura en Mercadotecnia',
+        'Licenciatura en Música',
+        'Licenciatura en Médico Cirujano',
+        'Licenciatura en Negocios Internacionales',
+        'Licenciatura en Nutrición',
+        'Licenciatura en Proyectos de Tecnologías de Información e Innovación Digital',
+        'Licenciatura en Psicología',
+        'Licenciatura en Químico Farmacobiólogo',
+        'Licenciatura en Seguridad Informática',
+        'Licenciatura en Sistemas Computacionales',
+        'Licenciatura en Terapia Física',
     ];
 
     private const ROLES = [
@@ -69,6 +246,7 @@ class PerfilController extends Controller
             'areas'            => self::AREAS,
             'unidades'         => $this->conActual(self::UNIDADES, $usuario->unidad_academica),
             'programas'        => $this->conActual(self::PROGRAMAS, $usuario->nombre_carrera),
+            'unidadesProgramas'=> self::UNIDADES_PROGRAMAS,
             'roles'            => self::ROLES,
         ]);
     }
@@ -93,6 +271,11 @@ class PerfilController extends Controller
             ? ['required', 'string', 'max:20']
             : ['nullable'];
 
+        $unidadesValidas = array_unique(array_merge(
+            self::UNIDADES,
+            array_map('mb_strtoupper', self::UNIDADES)
+        ));
+
         // Sincronizamos 'matricula' (nombre en el HTML) con las reglas
         $data = $request->validate([
             'nombres'          => ['required', 'string', 'max:70'],
@@ -100,7 +283,7 @@ class PerfilController extends Controller
             'email'            => $reglasCorreo,
             'matricula'        => $reglasIdentificador,
             'area'             => ['required', Rule::in(array_keys(self::AREAS))],
-            'unidad_academica' => ['required', Rule::in($this->conActual(self::UNIDADES, $usuario->unidad_academica))],
+            'unidad_academica' => ['required', Rule::in($this->conActual($unidadesValidas, $usuario->unidad_academica))],
             'nombre_carrera'   => ['required', Rule::in($this->conActual(self::PROGRAMAS, $usuario->nombre_carrera))],
         ], [
             'email.unique'       => 'Este correo ya está registrado.',
@@ -110,13 +293,22 @@ class PerfilController extends Controller
                 : 'La matrícula es obligatoria.',
         ]);
 
+        // Si se envió en mayúsculas, se normaliza al nombre canónico
+        $unidadNormalizada = $data['unidad_academica'];
+        foreach (self::UNIDADES as $unidadCanonica) {
+            if (mb_strtolower($unidadCanonica) === mb_strtolower($unidadNormalizada)) {
+                $unidadNormalizada = $unidadCanonica;
+                break;
+            }
+        }
+
         $usuario->fill([
             'nombres'                 => $data['nombres'],
             'apellidos'               => $data['apellidos'],
             'correo_electronico'      => $data['email'],
             'matricula_numtrabajador' => $requiereIdentificador ? $data['matricula'] : null,
             'area'                    => $data['area'],
-            'unidad_academica'        => $data['unidad_academica'],
+            'unidad_academica'        => $unidadNormalizada,
             'nombre_carrera'          => $data['nombre_carrera'],
         ])->save();
 
@@ -160,5 +352,21 @@ class PerfilController extends Controller
         }
 
         return $opciones;
+    }
+
+    /**
+     * Obtiene los programas académicos asociados a una unidad o todos si no se especifica.
+     */
+    public static function getProgramasPorUnidad(?string $unidad = null): array
+    {
+        if ($unidad) {
+            foreach (self::UNIDADES_PROGRAMAS as $u => $carreras) {
+                if (mb_strtolower($u) === mb_strtolower($unidad)) {
+                    return $carreras;
+                }
+            }
+        }
+
+        return self::PROGRAMAS;
     }
 }
