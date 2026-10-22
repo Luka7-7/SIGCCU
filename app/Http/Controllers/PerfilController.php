@@ -238,7 +238,7 @@ class PerfilController extends Controller
             ->where('usuario_id', $usuario->id)
             ->count();
 
-        return view('user.settings', [
+        return view('user.settings.personal', [
             'usuario'          => $usuario,
             'inscripciones'    => $inscripciones,
             'propuestas'       => $propuestas,
@@ -252,9 +252,37 @@ class PerfilController extends Controller
     }
 
     /**
-     * Actualiza los datos personales y académicos.
+     * Muestra la sección de datos académicos.
      */
-    public function update(Request $request)
+    public function showAcademic(Request $request)
+    {
+        $usuario = $request->user();
+
+        return view('user.settings.academic', [
+            'usuario'   => $usuario,
+            'areas'     => self::AREAS,
+            'unidades'  => $this->conActual(self::UNIDADES, $usuario->unidad_academica),
+            'programas' => $this->conActual(self::PROGRAMAS, $usuario->nombre_carrera),
+            'roles'     => self::ROLES,
+        ]);
+    }
+
+    /**
+     * Muestra la sección de ajustes generales.
+     */
+    public function showGeneral(Request $request)
+    {
+        $usuario = $request->user();
+
+        return view('user.settings.general', [
+            'usuario' => $usuario,
+        ]);
+    }
+
+    /**
+     * Actualiza únicamente los datos personales del usuario.
+     */
+    public function updatePersonal(Request $request)
     {
         $usuario = $request->user();
         $requiereIdentificador = in_array($usuario->rol, ['alumno', 'docente'], true);
@@ -267,6 +295,34 @@ class PerfilController extends Controller
             $reglasCorreo[] = 'ends_with:@uan.edu.mx';
         }
 
+        $data = $request->validate([
+            'nombres'   => ['required', 'string', 'max:70'],
+            'apellidos' => ['required', 'string', 'max:80'],
+            'email'     => $reglasCorreo,
+        ], [
+            'email.unique'    => 'Este correo ya está registrado.',
+            'email.ends_with' => 'Debes usar tu correo institucional (@uan.edu.mx).',
+        ]);
+
+        $usuario->fill([
+            'nombres'            => $data['nombres'],
+            'apellidos'          => $data['apellidos'],
+            'correo_electronico' => $data['email'],
+        ])->save();
+
+        return redirect()
+            ->route('settings')
+            ->with('status', 'Tus datos personales se guardaron correctamente.');
+    }
+
+    /**
+     * Actualiza únicamente los datos académicos del usuario.
+     */
+    public function updateAcademic(Request $request)
+    {
+        $usuario = $request->user();
+        $requiereIdentificador = in_array($usuario->rol, ['alumno', 'docente'], true);
+
         $reglasIdentificador = $requiereIdentificador
             ? ['required', 'string', 'max:20']
             : ['nullable'];
@@ -276,18 +332,12 @@ class PerfilController extends Controller
             array_map('mb_strtoupper', self::UNIDADES)
         ));
 
-        // Sincronizamos 'matricula' (nombre en el HTML) con las reglas
         $data = $request->validate([
-            'nombres'          => ['required', 'string', 'max:70'],
-            'apellidos'        => ['required', 'string', 'max:80'],
-            'email'            => $reglasCorreo,
             'matricula'        => $reglasIdentificador,
             'area'             => ['required', Rule::in(array_keys(self::AREAS))],
             'unidad_academica' => ['required', Rule::in($this->conActual($unidadesValidas, $usuario->unidad_academica))],
             'nombre_carrera'   => ['required', Rule::in($this->conActual(self::PROGRAMAS, $usuario->nombre_carrera))],
         ], [
-            'email.unique'       => 'Este correo ya está registrado.',
-            'email.ends_with'    => 'Debes usar tu correo institucional (@uan.edu.mx).',
             'matricula.required' => $usuario->rol === 'docente'
                 ? 'El número de empleado es obligatorio.'
                 : 'La matrícula es obligatoria.',
@@ -303,9 +353,6 @@ class PerfilController extends Controller
         }
 
         $usuario->fill([
-            'nombres'                 => $data['nombres'],
-            'apellidos'               => $data['apellidos'],
-            'correo_electronico'      => $data['email'],
             'matricula_numtrabajador' => $requiereIdentificador ? $data['matricula'] : null,
             'area'                    => $data['area'],
             'unidad_academica'        => $unidadNormalizada,
@@ -313,8 +360,8 @@ class PerfilController extends Controller
         ])->save();
 
         return redirect()
-            ->route('profile.update')
-            ->with('status', 'Tus datos se guardaron correctamente.');
+            ->route('settings.academic')
+            ->with('status', 'Tus datos académicos se guardaron correctamente.');
     }
 
     /**
@@ -338,7 +385,7 @@ class PerfilController extends Controller
         $request->session()->regenerate();
 
         return redirect()
-            ->route('settings')
+            ->route('settings.general')
             ->with('status', 'Tu contraseña se actualizó correctamente.');
     }
 
