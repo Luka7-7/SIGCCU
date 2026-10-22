@@ -17,7 +17,7 @@
 </head>
 
 <body>
-  <x-sidebar />
+  <x-navbar />
   <div class="page">
     <div class="page-wrapper">
       <main class="page-body">
