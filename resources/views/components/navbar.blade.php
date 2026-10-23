@@ -37,9 +37,15 @@
               <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path>
             </svg>
             Mi perfil</a>
+          @if (auth()->user()->rol === 'administrador')
+            <a class="dropdown-item" href="{{ route('administracion.congresos.index') }}">Revisar congresos</a>
+          @endif
           <div class="dropdown-divider"></div>
           <a class="dropdown-item" href="{{ route('settings') }}">Ajustes</a>
-          <a class="dropdown-item" href="{{ route('logout') }}">Cerrar sesión</a>
+          <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="dropdown-item">Cerrar sesión</button>
+          </form>
         </div>
       </div>
       <!-- END USER MENU -->

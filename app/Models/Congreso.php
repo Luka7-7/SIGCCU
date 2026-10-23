@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Congreso extends Model
@@ -25,6 +26,9 @@ class Congreso extends Model
         'minimo_conferencias',
         'eje_tematico',
         'dictamen',
+        'solicitante_id',
+        'solicitud_pdf',
+        'solicitada_en',
     ];
 
     protected $casts = [
@@ -32,6 +36,7 @@ class Congreso extends Model
         'fecha_fin'      => 'date',
         'registro_abre'  => 'datetime',
         'registro_cierre'=> 'datetime',
+        'solicitada_en'  => 'datetime',
     ];
 
     // Sedes asociadas a este congreso (muchos a muchos)
@@ -65,10 +70,19 @@ class Congreso extends Model
         return $this->hasMany(Propuesta::class, 'congreso_id');
     }
 
+    public function programas(): HasMany
+    {
+        return $this->hasMany(ProgramaCongreso::class, 'congreso_id');
+    }
+
+    public function solicitante(): BelongsTo
+    {
+        return $this->belongsTo(Usuario::class, 'solicitante_id');
+    }
+
     // Constancias emitidas para este congreso
     public function constancias(): HasMany
     {
         return $this->hasMany(Constancia::class, 'congreso_id');
     }
 }
-

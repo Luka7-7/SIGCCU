@@ -54,7 +54,10 @@
               </svg>
               Ajustes</a>
             <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="{{ route('login') }}">Cerrar sesión</a>
+            <form method="POST" action="{{ route('logout') }}">
+              @csrf
+              <button type="submit" class="dropdown-item">Cerrar sesión</button>
+            </form>
           </div>
         </li>
       </ul>

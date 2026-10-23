@@ -102,6 +102,11 @@ class Usuario extends Authenticatable
         return $this->hasMany(Propuesta::class, 'usuario_id');
     }
 
+    public function congresosSolicitados(): HasMany
+    {
+        return $this->hasMany(Congreso::class, 'solicitante_id');
+    }
+
     // Nombre completo (accesor de conveniencia)
     public function getNombreCompletoAttribute(): string
     {

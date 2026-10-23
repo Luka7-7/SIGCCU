@@ -4,12 +4,31 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\DocenteController;
+use App\Http\Controllers\Administracion\RevisionCongresoController;
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
 
-    Route::get('/profile', fn() => view('user.profile'))->name('profile');
+    Route::get('/profile', fn() => request()->user()->rol === 'docente'
+        ? redirect()->route('docente.dashboard')
+        : view('user.profile'))->name('profile');
+
+    Route::middleware('docente')->prefix('docente')->name('docente.')->group(function () {
+        Route::get('/dashboard', [DocenteController::class, 'index'])->name('dashboard');
+        Route::post('/congresos', [DocenteController::class, 'store'])->name('congresos.store');
+    });
+
+    Route::middleware('administrador')->prefix('administracion')->name('administracion.')->group(function () {
+        Route::get('/congresos', [RevisionCongresoController::class, 'index'])->name('congresos.index');
+        Route::get('/congresos/{congreso}/solicitud', [RevisionCongresoController::class, 'downloadSolicitud'])
+            ->name('congresos.solicitud');
+        Route::get('/congresos/propuestas/{propuesta}', [RevisionCongresoController::class, 'downloadPropuesta'])
+            ->name('congresos.propuesta');
+        Route::patch('/congresos/{congreso}', [RevisionCongresoController::class, 'update'])
+            ->name('congresos.update');
+    });
 
     // Rutas de vista
     Route::get('/perfil', fn() => redirect()->route('profile'))->name('usuario.perfil');
@@ -25,7 +44,10 @@ Route::middleware('auth')->group(function () {
 
 });
 Route::middleware('guest')->group(function () {
-    Route::get('/', fn() => view('auth.login'))->name('login');
+    Route::get('/', fn() => response()
+        ->view('auth.login')
+        ->header('Cache-Control', 'no-store, private'))
+        ->name('login');
     Route::get('/fogot-password', fn() => view('auth.fogot-password'))->name('fogot');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 
