@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Usuario;
+use App\Models\Carrera;
 use Carbon\Carbon;
+use Database\Seeders\CarrerasSeeder;
+use Database\Seeders\UsuariosSeeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -13,6 +16,39 @@ use Tests\TestCase;
 class DocenteDashboardTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_carrera_and_user_seeders_create_valid_carrera_relationships(): void
+    {
+        $this->seed([CarrerasSeeder::class, UsuariosSeeder::class]);
+
+        $usuario = Usuario::query()->findOrFail(2);
+
+        $this->assertSame('Ingeniería en Computación', $usuario->carrera->nombre_carrera);
+        $this->assertDatabaseHas('usuarios', [
+            'id' => $usuario->id,
+            'Carrera_id' => $usuario->carrera->id,
+        ]);
+    }
+
+    public function test_user_can_update_academic_details_to_an_existing_carrera(): void
+    {
+        $this->seed(CarrerasSeeder::class);
+        $usuario = $this->createUser('alumno');
+
+        $this->actingAs($usuario)
+            ->put(route('settings.update.academic'), [
+                'matricula' => '87654321',
+                'area' => 'ciencias basicas e ingenierias',
+                'unidad_academica' => 'Unidad Académica de Ciencias Básicas e Ingenierías',
+                'nombre_carrera' => 'Ingeniería en Electrónica',
+            ])
+            ->assertRedirect(route('settings.academic'));
+
+        $usuario->refresh();
+
+        $this->assertSame('Ingeniería en Electrónica', $usuario->carrera->nombre_carrera);
+        $this->assertSame('87654321', $usuario->matricula_numtrabajador);
+    }
 
     public function test_docente_can_submit_a_congress_request_programs_and_academic_proposal(): void
     {
@@ -129,18 +165,22 @@ class DocenteDashboardTest extends TestCase
 
     private function createUser(string $rol): Usuario
     {
+        $carrera = Carrera::query()->firstOrCreate([
+            'nombre_carrera' => 'Ingeniería en Computación',
+            'unidad_academica' => 'Unidad Académica de Ciencias e Ingenierías',
+            'area' => 'ciencias basicas e ingenierias',
+            'institucion' => 'Universidad Autónoma de Nayarit',
+        ]);
+
         return Usuario::create([
             'correo_electronico' => fake()->unique()->safeEmail(),
             'contrasena' => Hash::make('password'),
             'nombres' => 'Usuario',
             'apellidos' => 'Prueba',
             'rol' => $rol,
-            'institucion' => 'Universidad Autónoma de Nayarit',
             'matricula_numtrabajador' => '12345678',
-            'unidad_academica' => 'Unidad Académica de Ciencias e Ingenierías',
-            'nombre_carrera' => 'Ingeniería en Computación',
+            'Carrera_id' => $carrera->id,
             'activo' => true,
-            'area' => 'ciencias basicas e ingenierias',
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -18,11 +19,8 @@ class Usuario extends Authenticatable
         'nombres',
         'apellidos',
         'rol',
-        'institucion',
         'matricula_numtrabajador',
-        'unidad_academica',
-        'nombre_carrera',
-        'area',
+        'Carrera_id',
         'activo',
     ];
 
@@ -51,6 +49,31 @@ class Usuario extends Authenticatable
     }
 
     // ── Relaciones ────────────────────────────────────────────
+
+    public function carrera(): BelongsTo
+    {
+        return $this->belongsTo(Carrera::class, 'Carrera_id');
+    }
+
+    public function getInstitucionAttribute(): ?string
+    {
+        return $this->carrera?->institucion;
+    }
+
+    public function getUnidadAcademicaAttribute(): ?string
+    {
+        return $this->carrera?->unidad_academica;
+    }
+
+    public function getNombreCarreraAttribute(): ?string
+    {
+        return $this->carrera?->nombre_carrera;
+    }
+
+    public function getAreaAttribute(): ?string
+    {
+        return $this->carrera?->area;
+    }
 
     // Congresos a los que está inscrito (muchos a muchos)
     public function congresos(): BelongsToMany

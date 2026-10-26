@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Carrera;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
 {
@@ -60,17 +62,26 @@ class RegisterController extends Controller
             default      => null,
         };
 
+        $carrera = Carrera::query()
+            ->where('unidad_academica', self::UNIDADES[$data['unidad_academica']])
+            ->where('nombre_carrera', self::PROGRAMAS[$data['programa_academico']])
+            ->where('area', self::AREAS[$data['area_academica']])
+            ->first();
+
+        if (! $carrera) {
+            throw ValidationException::withMessages([
+                'programa_academico' => 'La carrera seleccionada no está disponible.',
+            ]);
+        }
+
         $usuario = Usuario::create([
             'correo_electronico'      => $data['email'],
             'contrasena'              => Hash::make($data['password']),
             'nombres'                 => $data['nombres'],
             'apellidos'               => $data['apellidos'],
             'rol'                     => self::ROLES[$data['perfil_inicial']],
-            'institucion'             => 'Universidad Autónoma de Nayarit',
             'matricula_numtrabajador' => $identificador,
-            'unidad_academica'        => self::UNIDADES[$data['unidad_academica']],
-            'nombre_carrera'          => self::PROGRAMAS[$data['programa_academico']],
-            'area'                    => self::AREAS[$data['area_academica']],
+            'Carrera_id'              => $carrera->id,
         ]);
 
         Auth::login($usuario);

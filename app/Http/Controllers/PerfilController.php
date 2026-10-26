@@ -4,10 +4,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Carrera;
+use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PerfilController extends Controller
 {
@@ -219,6 +222,7 @@ class PerfilController extends Controller
     public function show(Request $request)
     {
         $usuario = $request->user();
+        $opcionesAcademicas = $this->opcionesAcademicas($usuario);
 
         $inscripciones = DB::table('inscripciones_congresos as ic')
             ->join('congresos as c', 'c.id', '=', 'ic.congreso_id')
@@ -243,9 +247,9 @@ class PerfilController extends Controller
             'inscripciones'    => $inscripciones,
             'propuestas'       => $propuestas,
             'totalConstancias' => $totalConstancias,
-            'areas'            => self::AREAS,
-            'unidades'         => $this->conActual(self::UNIDADES, $usuario->unidad_academica),
-            'programas'        => $this->conActual(self::PROGRAMAS, $usuario->nombre_carrera),
+            'areas'            => $opcionesAcademicas['areas'],
+            'unidades'         => $opcionesAcademicas['unidades'],
+            'programas'        => $opcionesAcademicas['programas'],
             'unidadesProgramas'=> self::UNIDADES_PROGRAMAS,
             'roles'            => self::ROLES,
         ]);
@@ -257,12 +261,13 @@ class PerfilController extends Controller
     public function showAcademic(Request $request)
     {
         $usuario = $request->user();
+        $opcionesAcademicas = $this->opcionesAcademicas($usuario);
 
         return view('user.settings.academic', [
             'usuario'   => $usuario,
-            'areas'     => self::AREAS,
-            'unidades'  => $this->conActual(self::UNIDADES, $usuario->unidad_academica),
-            'programas' => $this->conActual(self::PROGRAMAS, $usuario->nombre_carrera),
+            'areas'     => $opcionesAcademicas['areas'],
+            'unidades'  => $opcionesAcademicas['unidades'],
+            'programas' => $opcionesAcademicas['programas'],
             'roles'     => self::ROLES,
         ]);
     }
@@ -327,16 +332,17 @@ class PerfilController extends Controller
             ? ['required', 'string', 'max:20']
             : ['nullable'];
 
+        $opcionesAcademicas = $this->opcionesAcademicas($usuario);
         $unidadesValidas = array_unique(array_merge(
-            self::UNIDADES,
-            array_map('mb_strtoupper', self::UNIDADES)
+            $opcionesAcademicas['unidades'],
+            array_map('mb_strtoupper', $opcionesAcademicas['unidades'])
         ));
 
         $data = $request->validate([
             'matricula'        => $reglasIdentificador,
-            'area'             => ['required', Rule::in(array_keys(self::AREAS))],
-            'unidad_academica' => ['required', Rule::in($this->conActual($unidadesValidas, $usuario->unidad_academica))],
-            'nombre_carrera'   => ['required', Rule::in($this->conActual(self::PROGRAMAS, $usuario->nombre_carrera))],
+            'area'             => ['required', Rule::in(array_keys($opcionesAcademicas['areas']))],
+            'unidad_academica' => ['required', Rule::in($unidadesValidas)],
+            'nombre_carrera'   => ['required', Rule::in($opcionesAcademicas['programas'])],
         ], [
             'matricula.required' => $usuario->rol === 'docente'
                 ? 'El número de empleado es obligatorio.'
@@ -345,18 +351,28 @@ class PerfilController extends Controller
 
         // Si se envió en mayúsculas, se normaliza al nombre canónico
         $unidadNormalizada = $data['unidad_academica'];
-        foreach (self::UNIDADES as $unidadCanonica) {
+        foreach ($opcionesAcademicas['unidades'] as $unidadCanonica) {
             if (mb_strtolower($unidadCanonica) === mb_strtolower($unidadNormalizada)) {
                 $unidadNormalizada = $unidadCanonica;
                 break;
             }
         }
 
+        $carrera = Carrera::query()
+            ->where('area', $data['area'])
+            ->where('unidad_academica', $unidadNormalizada)
+            ->where('nombre_carrera', $data['nombre_carrera'])
+            ->first();
+
+        if (! $carrera) {
+            throw ValidationException::withMessages([
+                'nombre_carrera' => 'El programa no corresponde al área y la unidad académica seleccionadas.',
+            ]);
+        }
+
         $usuario->fill([
             'matricula_numtrabajador' => $requiereIdentificador ? $data['matricula'] : null,
-            'area'                    => $data['area'],
-            'unidad_academica'        => $unidadNormalizada,
-            'nombre_carrera'          => $data['nombre_carrera'],
+            'Carrera_id'              => $carrera->id,
         ])->save();
 
         return redirect()
@@ -399,6 +415,31 @@ class PerfilController extends Controller
         }
 
         return $opciones;
+    }
+
+    private function opcionesAcademicas(Usuario $usuario): array
+    {
+        $carreras = Carrera::query()
+            ->orderBy('unidad_academica')
+            ->orderBy('nombre_carrera')
+            ->get();
+        $areas = self::AREAS;
+
+        foreach ($carreras->pluck('area')->unique() as $area) {
+            $areas[$area] ??= ucfirst($area);
+        }
+
+        return [
+            'areas' => $areas,
+            'unidades' => $this->conActual(
+                $carreras->pluck('unidad_academica')->unique()->values()->all(),
+                $usuario->carrera?->unidad_academica
+            ),
+            'programas' => $this->conActual(
+                $carreras->pluck('nombre_carrera')->unique()->values()->all(),
+                $usuario->carrera?->nombre_carrera
+            ),
+        ];
     }
 
     /**

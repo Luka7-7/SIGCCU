@@ -12,6 +12,18 @@ CREATE SCHEMA IF NOT EXISTS `sigccu` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8m
 USE `sigccu`;
 
 -- -----------------------------------------------------
+-- Table `Carrera`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `Carrera` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `nombre_carrera` VARCHAR(100) NOT NULL,
+  `unidad_academica` VARCHAR(100) NOT NULL,
+  `area` ENUM('artes', 'ciencias basicas e ingenierias', 'ciencias economico y administrativas', 'ciencias biologicas y agropecuarias', 'ciencias de la salud', 'ciencias sociales y humanidades') NOT NULL,
+  `institucion` VARCHAR(90) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+-- -----------------------------------------------------
 -- Table `usuarios`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `usuarios` (
@@ -21,15 +33,18 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
   `nombres` VARCHAR(70) NOT NULL,
   `apellidos` VARCHAR(80) NOT NULL,
   `rol` ENUM('administrador', 'alumno', 'docente', 'externo') NOT NULL,
-  `institucion` VARCHAR(90) NOT NULL,
   `matricula_numtrabajador` VARCHAR(8) NULL DEFAULT NULL,
-  `unidad_academica` VARCHAR(100) NULL DEFAULT NULL,
-  `nombre_carrera` VARCHAR(100) NULL DEFAULT NULL,
+  `Carrera_id` INT UNSIGNED NOT NULL,
   `activo` TINYINT(1) NOT NULL DEFAULT 1,
   `creado_en` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `area` ENUM('artes', 'ciencias basicas e ingenierias', 'ciencias economico y administrativas', 'ciencias biologicas y agropecuarias', 'ciencias de la salud', 'ciencias sociales y humanidades') NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `correo_electronico_UNIQUE` (`correo_electronico` ASC)
+  UNIQUE INDEX `correo_electronico_UNIQUE` (`correo_electronico` ASC),
+  INDEX `fk_usuarios_Carrera1_idx` (`Carrera_id` ASC),
+  CONSTRAINT `fk_usuarios_Carrera1`
+    FOREIGN KEY (`Carrera_id`)
+    REFERENCES `Carrera` (`id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -----------------------------------------------------
@@ -50,7 +65,16 @@ CREATE TABLE IF NOT EXISTS `congresos` (
   `minimo_conferencias` INT NOT NULL DEFAULT 0,
   `eje_tematico` VARCHAR(100) NOT NULL,
   `dictamen` ENUM('aceptada', 'con observaciones', 'rechazada') NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `solicitante_id` INT UNSIGNED NULL DEFAULT NULL,
+  `solicitud_pdf` VARCHAR(255) NULL DEFAULT NULL,
+  `solicitada_en` DATETIME NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_congresos_solicitante_idx` (`solicitante_id` ASC),
+  CONSTRAINT `fk_congresos_solicitante`
+    FOREIGN KEY (`solicitante_id`)
+    REFERENCES `usuarios` (`id`)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -----------------------------------------------------
@@ -82,6 +106,22 @@ CREATE TABLE IF NOT EXISTS `congresos_sedes` (
   CONSTRAINT `fk_congresos_sedes_sedes`
     FOREIGN KEY (`sede_id`)
     REFERENCES `sedes` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+-- -----------------------------------------------------
+-- Table `congresos_programas`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `congresos_programas` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `congreso_id` INT UNSIGNED NOT NULL,
+  `programa` VARCHAR(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `congresos_programas_unique` (`congreso_id` ASC, `programa` ASC),
+  CONSTRAINT `fk_congresos_programas_congreso`
+    FOREIGN KEY (`congreso_id`)
+    REFERENCES `congresos` (`id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
@@ -275,4 +315,3 @@ CREATE TABLE IF NOT EXISTS `Comentarios_propuestas` (
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
-
