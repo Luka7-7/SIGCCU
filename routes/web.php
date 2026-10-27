@@ -18,6 +18,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('docente')->prefix('docente')->name('docente.')->group(function () {
         Route::get('/dashboard', [DocenteController::class, 'index'])->name('dashboard');
         Route::post('/congresos', [DocenteController::class, 'store'])->name('congresos.store');
+        Route::patch('/propuestas/{propuesta}/aceptar', [DocenteController::class, 'acceptProposal'])
+            ->name('propuestas.accept');
     });
 
     Route::middleware('administrador')->prefix('administracion')->name('administracion.')->group(function () {
@@ -28,6 +30,8 @@ Route::middleware('auth')->group(function () {
             ->name('congresos.propuesta');
         Route::patch('/congresos/{congreso}', [RevisionCongresoController::class, 'update'])
             ->name('congresos.update');
+        Route::patch('/propuestas/{propuesta}/evaluador', [RevisionCongresoController::class, 'assignEvaluator'])
+            ->name('propuestas.assign-evaluator');
     });
 
     // Rutas de vista
@@ -51,6 +55,6 @@ Route::middleware('guest')->group(function () {
     Route::get('/fogot-password', fn() => view('auth.fogot-password'))->name('fogot');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 
-    Route::get('/register', fn() => view('auth.register'))->name('register');
+    Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
 });

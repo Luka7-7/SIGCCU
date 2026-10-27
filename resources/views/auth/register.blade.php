@@ -1,14 +1,45 @@
 <x-layout.guest title="Crea una cuenta en - SIGCCU">
 
-    <div class="card card-md" x-data="{ 
-            step: 1, 
+    <div class="card card-md" x-data="{
+            step: {{ $errors->any() ? 3 : 1 }},
             perfil: '{{ old('perfil_inicial', 'estudiante') }}',
             showPassword: false,
-            showPasswordConfirm: false 
+            showPasswordConfirm: false,
+            carreras: @js($carreras->map(fn ($carrera) => [
+                'area' => $carrera->area,
+                'unidad' => $carrera->unidad_academica,
+                'programa' => $carrera->nombre_carrera,
+            ])->values()),
+            area: @js(old('area_academica', '')),
+            unidad: @js(old('unidad_academica', '')),
+            programa: @js(old('programa_academico', '')),
+            get areas() {
+                return [...new Set(this.carreras.map(carrera => carrera.area))];
+            },
+            get unidades() {
+                return [...new Set(this.carreras
+                    .filter(carrera => carrera.area === this.area)
+                    .map(carrera => carrera.unidad))];
+            },
+            get programas() {
+                return [...new Set(this.carreras
+                    .filter(carrera => carrera.area === this.area && carrera.unidad === this.unidad)
+                    .map(carrera => carrera.programa))];
+            }
         }">
         <div class="card-body">
             <h1 class="h2 text-center mb-4">Registrate en SIGCCU</h1>
             <p class="text-secondary mt-2">Tus datos están protegidos y serán tratados con confidencialidad.</p>
+
+            @if ($errors->any())
+                <div class="alert alert-danger" role="alert">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             <form class="mt-4" action="{{ route('register') }}" method="POST">
                 @csrf
@@ -152,30 +183,36 @@
                     <!-- Área Académica -->
                     <div class="mb-3">
                         <label class="form-label">Área Académica</label>
-                        <select class="form-select w-100" name="area_academica">
-                            <option value="" disabled selected>Selecciona tu área académica</option>
-                            <option value="CB">Área de Ciencias Básicas e Ingenierías</option>
-                            <option value="CS">Área de Ciencias de la Salud</option>
-                            <option value="EA">Área de Económico Administrativas</option>
-                            <option value="SH">Área de Ciencias Sociales y Humanidades</option>
+                        <select class="form-select w-100" name="area_academica" x-model="area"
+                            @change="unidad = ''; programa = ''" required>
+                            <option value="" disabled>Selecciona tu área académica</option>
+                            <template x-for="opcion in areas" :key="opcion">
+                                <option :value="opcion" x-text="opcion"></option>
+                            </template>
                         </select>
                     </div>
 
                     <!-- Unidad Académica -->
                     <div class="mb-3">
                         <label class="form-label">Unidad Académica</label>
-                        <select class="form-select w-100" name="unidad_academica">
-                            <option value="" disabled selected>Selecciona tu unidad académica</option>
-                            <option value="02">Unidad Académica de Ciencias e Ingenierías</option>
+                        <select class="form-select w-100" name="unidad_academica" x-model="unidad"
+                            @change="programa = ''" :disabled="!area" required>
+                            <option value="" disabled>Selecciona tu unidad académica</option>
+                            <template x-for="opcion in unidades" :key="opcion">
+                                <option :value="opcion" x-text="opcion"></option>
+                            </template>
                         </select>
                     </div>
 
                     <!-- Programa Académico -->
                     <div class="mb-3">
                         <label class="form-label">Programa Académico</label>
-                        <select class="form-select w-100" name="programa_academico">
-                            <option value="" disabled selected>Selecciona tu programa académico</option>
-                            <option value="03">Ingeniería en Computación</option>
+                        <select class="form-select w-100" name="programa_academico" x-model="programa"
+                            :disabled="!unidad" required>
+                            <option value="" disabled>Selecciona tu programa académico</option>
+                            <template x-for="opcion in programas" :key="opcion">
+                                <option :value="opcion" x-text="opcion"></option>
+                            </template>
                         </select>
                     </div>
 

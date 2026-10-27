@@ -18,7 +18,12 @@ class Propuesta extends Model
         'usuario_id',
         'congreso_id',
         'evaluador_id',
+        'evaluador_aceptado',
         'propuestascol',
+    ];
+
+    protected $casts = [
+        'evaluador_aceptado' => 'boolean',
     ];
 
     // Usuario que envió la propuesta
@@ -45,4 +50,3 @@ class Propuesta extends Model
         return $this->hasMany(ComentarioPropuesta::class, 'propuestas_id');
     }
 }
-

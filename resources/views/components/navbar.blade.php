@@ -66,7 +66,7 @@
               <ul class="navbar-nav">
                 <!-- BEGIN NAVBAR ITEM -->
                 <li class="nav-item active dropdown">
-                  <a class="nav-link" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                  <a class="nav-link" href="{{ auth()->user()->rol === 'administrador' ? route('administracion.congresos.index') : (auth()->user()->rol === 'docente' ? route('docente.dashboard') : route('profile')) }}"
                     role="button" aria-haspopup="true" aria-expanded="false">
                     <span class="nav-link-icon"><!-- Download SVG icon from http://tabler.io/icons/icon/home -->
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"

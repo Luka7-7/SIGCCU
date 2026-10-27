@@ -9,6 +9,38 @@
       <div class="alert alert-success" role="alert">{{ session('status') }}</div>
     @endif
 
+    @if (isset($evaluaciones) && $evaluaciones->isNotEmpty())
+      <div class="card mb-4">
+        <div class="card-header">
+          <h2 class="card-title">Solicitudes de evaluación</h2>
+        </div>
+        <div class="list-group list-group-flush">
+          @foreach ($evaluaciones as $evaluacion)
+            <div class="list-group-item">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                  <h3 class="h3 mb-1">{{ $evaluacion->congreso?->nombre ?? 'Congreso' }}</h3>
+                  <p class="text-secondary mb-1">
+                    Propuesta de {{ $evaluacion->usuario?->nombre_completo ?? 'Usuario eliminado' }}
+                  </p>
+                  <span class="badge {{ $evaluacion->evaluador_aceptado ? 'bg-green-lt' : 'bg-yellow-lt' }}">
+                    {{ $evaluacion->evaluador_aceptado ? 'Asignación aceptada' : 'Pendiente de aceptación' }}
+                  </span>
+                </div>
+                @unless ($evaluacion->evaluador_aceptado)
+                  <form method="POST" action="{{ route('docente.propuestas.accept', $evaluacion) }}">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" class="btn btn-primary">Aceptar evaluación</button>
+                  </form>
+                @endunless
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
+
     <div class="card mb-4">
       <div class="card-header">
         <h2 class="card-title">Mis datos</h2>
@@ -88,24 +120,107 @@
             </div>
           </div>
 
-          <fieldset class="mt-4">
+          <fieldset
+            class="mt-4"
+            x-data="{
+              carreras: @js($carreras->map(fn ($carrera) => [
+                'area' => $carrera->area,
+                'unidad' => $carrera->unidad_academica,
+                'programa' => $carrera->nombre_carrera,
+              ])->values()),
+              areasSeleccionadas: @js(old('areas_participantes', [])),
+              unidadesSeleccionadas: @js(old('unidades_participantes', [])),
+              seleccionados: @js(old('programas', [])),
+              get areas() {
+                return [...new Set(this.carreras.map(carrera => carrera.area))];
+              },
+              get unidades() {
+                return [...new Set(this.carreras
+                  .filter(carrera => this.areasSeleccionadas.includes(carrera.area))
+                  .map(carrera => carrera.unidad))];
+              },
+              get programas() {
+                return [...new Set(this.carreras
+                  .filter(carrera => this.areasSeleccionadas.includes(carrera.area)
+                    && this.unidadesSeleccionadas.includes(carrera.unidad))
+                  .map(carrera => carrera.programa))];
+              },
+              actualizarAreas() {
+                this.unidadesSeleccionadas = this.unidadesSeleccionadas
+                  .filter(unidad => this.unidades.includes(unidad));
+                this.actualizarUnidades();
+              },
+              actualizarUnidades() {
+                this.seleccionados = this.seleccionados
+                  .filter(programa => this.programas.includes(programa));
+              }
+            }"
+          >
             <legend class="h3">Programas participantes</legend>
-            <p class="text-secondary">Selecciona todos los programas que podrán participar en este congreso.</p>
+            <p class="text-secondary">Selecciona una o varias áreas y unidades académicas. Después marca los programas que podrán participar.</p>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <h4 class="form-label">Áreas académicas</h4>
+                <div class="row g-2">
+                  <template x-for="(area, index) in areas" :key="area">
+                    <div class="col-12">
+                      <label class="form-check">
+                        <input
+                          type="checkbox"
+                          name="areas_participantes[]"
+                          :id="'area-participante-' + index"
+                          :value="area"
+                          x-model="areasSeleccionadas"
+                          @change="actualizarAreas()"
+                          class="form-check-input"
+                        >
+                        <span class="form-check-label" x-text="area"></span>
+                      </label>
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <h4 class="form-label">Unidades académicas</h4>
+                <div class="row g-2">
+                  <template x-for="(unidad, index) in unidades" :key="unidad">
+                    <div class="col-12">
+                      <label class="form-check">
+                        <input
+                          type="checkbox"
+                          name="unidades_participantes[]"
+                          :id="'unidad-participante-' + index"
+                          :value="unidad"
+                          x-model="unidadesSeleccionadas"
+                          @change="actualizarUnidades()"
+                          class="form-check-input"
+                        >
+                        <span class="form-check-label" x-text="unidad"></span>
+                      </label>
+                    </div>
+                  </template>
+                  <p class="text-secondary mb-0" x-show="areasSeleccionadas.length === 0">Primero selecciona una o varias áreas.</p>
+                </div>
+              </div>
+            </div>
             <div class="row g-2">
-              @foreach ($programas as $programa)
+              <template x-for="programa in programas" :key="programa">
                 <div class="col-md-6">
                   <label class="form-check">
                     <input
                       type="checkbox"
                       name="programas[]"
-                      value="{{ $programa }}"
+                      :value="programa"
+                      x-model="seleccionados"
                       class="form-check-input"
-                      @checked(in_array($programa, old('programas', []), true))
+                      :disabled="programas.length === 0"
                     >
-                    <span class="form-check-label">{{ $programa }}</span>
+                    <span class="form-check-label" x-text="programa"></span>
                   </label>
                 </div>
-              @endforeach
+              </template>
+              <p class="text-secondary mb-0" x-show="unidadesSeleccionadas.length === 0">Selecciona una o varias unidades para ver sus programas.</p>
+              <p class="text-secondary mb-0" x-show="unidadesSeleccionadas.length > 0 && programas.length === 0">No hay programas disponibles para las unidades seleccionadas.</p>
             </div>
           </fieldset>
 

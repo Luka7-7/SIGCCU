@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class RegisterController extends Controller
 {
@@ -20,20 +21,18 @@ class RegisterController extends Controller
         'externo'    => 'externo',
     ];
 
-    private const AREAS = [
-        'CB' => 'ciencias basicas e ingenierias',
-        'CS' => 'ciencias de la salud',
-        'EA' => 'ciencias economico y administrativas',
-        'SH' => 'ciencias sociales y humanidades',
-    ];
-
-    private const UNIDADES = [
-        '02' => 'Unidad Académica de Ciencias e Ingenierías',
-    ];
-
-    private const PROGRAMAS = [
-        '03' => 'Ingeniería en Computación',
-    ];
+    public function create(): View
+    {
+        return view('auth.register', [
+            'carreras' => Carrera::query()
+                ->select('area', 'unidad_academica', 'nombre_carrera')
+                ->orderBy('area')
+                ->orderBy('unidad_academica')
+                ->orderBy('nombre_carrera')
+                ->distinct()
+                ->get(),
+        ]);
+    }
 
     public function store(Request $request)
     {
@@ -45,9 +44,9 @@ class RegisterController extends Controller
             'password'           => ['required', 'string', 'min:8', 'confirmed'],
             'matricula'          => ['nullable', 'required_if:perfil_inicial,estudiante', 'string', 'max:8'],
             'numero_empleado'    => ['nullable', 'required_if:perfil_inicial,docente', 'string', 'max:8'],
-            'area_academica'     => ['required', Rule::in(array_keys(self::AREAS))],
-            'unidad_academica'   => ['required', Rule::in(array_keys(self::UNIDADES))],
-            'programa_academico' => ['required', Rule::in(array_keys(self::PROGRAMAS))],
+            'area_academica'     => ['required', 'string', Rule::exists('Carrera', 'area')],
+            'unidad_academica'   => ['required', 'string', Rule::exists('Carrera', 'unidad_academica')],
+            'programa_academico' => ['required', 'string', Rule::exists('Carrera', 'nombre_carrera')],
         ], [
             'email.unique'                   => 'Este correo ya está registrado.',
             'password.confirmed'             => 'Las contraseñas no coinciden.',
@@ -63,9 +62,9 @@ class RegisterController extends Controller
         };
 
         $carrera = Carrera::query()
-            ->where('unidad_academica', self::UNIDADES[$data['unidad_academica']])
-            ->where('nombre_carrera', self::PROGRAMAS[$data['programa_academico']])
-            ->where('area', self::AREAS[$data['area_academica']])
+            ->where('area', $data['area_academica'])
+            ->where('unidad_academica', $data['unidad_academica'])
+            ->where('nombre_carrera', $data['programa_academico'])
             ->first();
 
         if (! $carrera) {

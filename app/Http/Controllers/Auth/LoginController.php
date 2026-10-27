@@ -49,6 +49,10 @@ class LoginController extends Controller
             return redirect()->route('docente.dashboard');
         }
 
+        if ($request->user()->rol === 'administrador') {
+            return redirect()->route('administracion.congresos.index');
+        }
+
         return redirect()->intended(route('profile'));
     }
 
