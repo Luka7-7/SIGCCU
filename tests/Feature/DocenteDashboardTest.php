@@ -114,6 +114,7 @@ class DocenteDashboardTest extends TestCase
         $this->assertDatabaseHas('propuestas', [
             'usuario_id' => $docente->id,
             'resumen_estado' => 'Enviado',
+            'extenso_url' => null,
         ]);
 
         $archivosGuardados = array_merge(
@@ -234,6 +235,243 @@ class DocenteDashboardTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_evaluator_can_read_assigned_proposal_pdf_and_send_comments_to_its_author(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('propuestas/propuesta.pdf', '%PDF-1.4 documento');
+
+        $autor = $this->createUser('docente');
+        $evaluadorUsuario = $this->createUser('docente');
+        $evaluador = $evaluadorUsuario->evaluador()->create([
+            'licenciatura' => 'Ingeniería',
+        ]);
+        $congreso = \App\Models\Congreso::create([
+            'nombre' => 'Congreso evaluado',
+            'siglas' => 'CE',
+            'edicion' => 1,
+            'fecha_inicio' => '2027-03-10',
+            'fecha_fin' => '2027-03-12',
+            'registro_abre' => '2027-01-01 09:00',
+            'registro_cierre' => '2027-02-01 18:00',
+            'descripcion' => 'Congreso de prueba.',
+            'minimo_talleres' => 0,
+            'minimo_conferencias' => 0,
+            'eje_tematico' => 'Innovación',
+            'solicitante_id' => $autor->id,
+        ]);
+        $propuesta = Propuesta::create([
+            'resumen_url' => 'propuestas/propuesta.pdf',
+            'resumen_estado' => 'En revision',
+            'usuario_id' => $autor->id,
+            'congreso_id' => $congreso->id,
+            'evaluador_id' => $evaluador->id,
+            'evaluador_aceptado' => true,
+        ]);
+
+        $this->actingAs($evaluadorUsuario)
+            ->get(route('docente.dashboard'))
+            ->assertOk()
+            ->assertSee('Congreso evaluado')
+            ->assertSee(route('docente.propuestas.pdf', $propuesta))
+            ->assertSee('Enviar comentarios')
+            ->assertSee('name="resumen_estado"', false);
+
+        $this->get(route('docente.propuestas.pdf', $propuesta))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'inline; filename=resumen-propuesta.pdf');
+
+        $this->post(route('docente.propuestas.comments.store', $propuesta), [
+            'comentario' => 'Ampliar la metodología y precisar los resultados.',
+            'resumen_estado' => 'A corregir',
+        ])
+            ->assertRedirect(route('docente.dashboard'))
+            ->assertSessionHas('status', 'Los comentarios se enviaron al autor de la propuesta.');
+
+        $this->assertDatabaseHas('Comentarios_propuestas', [
+            'propuestas_id' => $propuesta->id,
+            'Comentario' => 'Ampliar la metodología y precisar los resultados.',
+        ]);
+        $this->assertDatabaseHas('propuestas', [
+            'id' => $propuesta->id,
+            'resumen_estado' => 'A corregir',
+        ]);
+
+        $this->actingAs($autor)
+            ->get(route('docente.dashboard'))
+            ->assertOk()
+            ->assertSee('Disponible cuando el resumen sea aceptado.')
+            ->assertDontSee('Subir PDF extenso');
+
+        $this->post(route('docente.propuestas.extenso.store', $propuesta), [
+            'extenso_pdf' => UploadedFile::fake()->create('propuesta-extensa.pdf', 10, 'application/pdf'),
+        ])->assertNotFound();
+
+        $this->actingAs($evaluadorUsuario)
+            ->post(route('docente.propuestas.comments.store', $propuesta), [
+                'comentario' => 'El resumen está aceptado; enviar versión extensa.',
+                'resumen_estado' => 'Aceptado',
+            ])
+            ->assertRedirect(route('docente.dashboard'));
+        $this->assertDatabaseHas('propuestas', [
+            'id' => $propuesta->id,
+            'resumen_estado' => 'Aceptado',
+        ]);
+        $this->assertDatabaseHas('congresos', [
+            'id' => $congreso->id,
+            'dictamen' => 'aceptada',
+        ]);
+
+        $this->actingAs($autor)
+            ->get(route('docente.dashboard'))
+            ->assertOk()
+            ->assertSee('Subir PDF extenso');
+
+        $this->post(route('docente.propuestas.extenso.store', $propuesta), [
+            'extenso_pdf' => UploadedFile::fake()->create('propuesta-extensa.pdf', 10, 'application/pdf'),
+        ])
+            ->assertRedirect(route('docente.dashboard'))
+            ->assertSessionHas('status', 'La propuesta extensa se envió correctamente.');
+
+        $this->assertDatabaseHas('propuestas', [
+            'id' => $propuesta->id,
+            'resumen_url' => 'propuestas/propuesta.pdf',
+            'resumen_estado' => 'En revision',
+        ]);
+        $firstExtendedPath = $propuesta->fresh()->extenso_url;
+        $this->assertNotNull($firstExtendedPath);
+
+        $this->actingAs($evaluadorUsuario)
+            ->get(route('docente.propuestas.extenso', $propuesta))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'inline; filename=propuesta-extensa.pdf');
+
+        $this->post(route('docente.propuestas.comments.store', $propuesta), [
+            'comentario' => 'Corregir la sección de resultados.',
+            'resumen_estado' => 'A corregir',
+        ])->assertRedirect(route('docente.dashboard'));
+        $this->actingAs($autor)
+            ->get(route('docente.dashboard'))
+            ->assertOk()
+            ->assertSee('Corregir PDF extenso');
+
+        $this->post(route('docente.propuestas.extenso.store', $propuesta), [
+            'extenso_pdf' => UploadedFile::fake()->create('propuesta-extensa-corregida.pdf', 12, 'application/pdf'),
+        ])
+            ->assertRedirect(route('docente.dashboard'))
+            ->assertSessionHas('status', 'La propuesta extensa se envió correctamente.');
+        $correctedExtendedPath = $propuesta->fresh()->extenso_url;
+        $this->assertNotSame($firstExtendedPath, $correctedExtendedPath);
+        Storage::disk('local')->assertMissing($firstExtendedPath);
+        $this->assertDatabaseHas('propuestas', [
+            'id' => $propuesta->id,
+            'resumen_estado' => 'En revision',
+        ]);
+
+        $this->actingAs($evaluadorUsuario)
+            ->post(route('docente.propuestas.comments.store', $propuesta), [
+                'comentario' => 'La propuesta extensa está aceptada.',
+                'resumen_estado' => 'Aceptado',
+            ])
+            ->assertRedirect(route('docente.dashboard'));
+
+        $this->assertDatabaseHas('propuestas', [
+            'id' => $propuesta->id,
+            'resumen_estado' => 'Aceptado',
+        ]);
+        $this->assertDatabaseHas('congresos', [
+            'id' => $congreso->id,
+            'dictamen' => 'aceptada',
+        ]);
+
+        $this->actingAs($evaluadorUsuario)
+            ->get(route('docente.dashboard'))
+            ->assertOk()
+            ->assertSee('Historial de propuestas evaluadas')
+            ->assertSee('Evaluación finalizada. No se permiten más cambios.')
+            ->assertDontSee('Devolución para el autor');
+        $this->post(route('docente.propuestas.comments.store', $propuesta), [
+            'comentario' => 'Intento de cambio después de la aceptación.',
+            'resumen_estado' => 'A corregir',
+        ])->assertNotFound();
+
+        $this->actingAs($autor)
+            ->get(route('docente.dashboard'))
+            ->assertOk()
+            ->assertSee('Devolución del evaluador')
+            ->assertSee('Ampliar la metodología y precisar los resultados.')
+            ->assertSee('Corregir la sección de resultados.')
+            ->assertSee('La propuesta extensa está aceptada.')
+            ->assertSee('Propuesta extensa aceptada. No se permiten cambios.')
+            ->assertSee('Leer propuesta extensa (PDF)')
+            ->assertDontSee('Corregir PDF extenso')
+            ->assertDontSee('Subir PDF extenso');
+
+        $this->post(route('docente.propuestas.extenso.store', $propuesta), [
+            'extenso_pdf' => UploadedFile::fake()->create('propuesta-extensa-cambio.pdf', 10, 'application/pdf'),
+        ])->assertNotFound();
+    }
+
+    public function test_only_the_accepted_assigned_evaluator_can_read_and_comment_on_a_proposal(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('propuestas/propuesta.pdf', '%PDF-1.4 documento');
+        Storage::disk('local')->put('propuestas/extensa.pdf', '%PDF-1.4 extensa');
+
+        $autor = $this->createUser('docente');
+        $evaluadorUsuario = $this->createUser('docente');
+        $otroDocente = $this->createUser('docente');
+        $evaluador = $evaluadorUsuario->evaluador()->create([
+            'licenciatura' => 'Ingeniería',
+        ]);
+        $congreso = \App\Models\Congreso::create([
+            'nombre' => 'Congreso evaluado',
+            'siglas' => 'CE',
+            'edicion' => 1,
+            'fecha_inicio' => '2027-03-10',
+            'fecha_fin' => '2027-03-12',
+            'registro_abre' => '2027-01-01 09:00',
+            'registro_cierre' => '2027-02-01 18:00',
+            'descripcion' => 'Congreso de prueba.',
+            'minimo_talleres' => 0,
+            'minimo_conferencias' => 0,
+            'eje_tematico' => 'Innovación',
+            'solicitante_id' => $autor->id,
+        ]);
+        $propuesta = Propuesta::create([
+            'resumen_url' => 'propuestas/propuesta.pdf',
+            'resumen_estado' => 'Enviado',
+            'usuario_id' => $autor->id,
+            'congreso_id' => $congreso->id,
+            'evaluador_id' => $evaluador->id,
+            'evaluador_aceptado' => false,
+            'extenso_url' => 'propuestas/extensa.pdf',
+        ]);
+
+        $this->actingAs($evaluadorUsuario)
+            ->get(route('docente.propuestas.pdf', $propuesta))
+            ->assertNotFound();
+        $this->get(route('docente.propuestas.extenso', $propuesta))
+            ->assertNotFound();
+        $this->post(route('docente.propuestas.comments.store', $propuesta), [
+            'comentario' => 'Comentario no autorizado.',
+        ])->assertNotFound();
+        $this->post(route('docente.propuestas.extenso.store', $propuesta), [
+            'extenso_pdf' => UploadedFile::fake()->create('propuesta-extensa.pdf', 10, 'application/pdf'),
+        ])->assertNotFound();
+
+        $propuesta->update(['evaluador_aceptado' => true]);
+        $this->actingAs($otroDocente)
+            ->get(route('docente.propuestas.pdf', $propuesta))
+            ->assertNotFound();
+        $this->get(route('docente.propuestas.extenso', $propuesta))
+            ->assertNotFound();
+        $this->post(route('docente.propuestas.comments.store', $propuesta), [
+            'comentario' => 'Comentario no autorizado.',
+        ])->assertNotFound();
+    }
+
     public function test_administrador_can_review_a_congress_request(): void
     {
         Storage::fake('local');
@@ -310,10 +548,38 @@ class DocenteDashboardTest extends TestCase
             'resumen_estado' => 'En revision',
         ]);
 
-        $this->actingAs($administrador)
-            ->patch(route('administracion.congresos.update', $congreso), [
+        Storage::disk('local')->put('propuestas/extensa-aceptada.pdf', 'Propuesta extensa aceptada');
+        $propuesta->update(['extenso_url' => 'propuestas/extensa-aceptada.pdf']);
+        $this->actingAs($evaluadorDocente)
+            ->post(route('docente.propuestas.comments.store', $propuesta), [
+                'comentario' => 'Propuesta extensa aceptada.',
+                'resumen_estado' => 'Aceptado',
+            ])
+            ->assertRedirect(route('docente.dashboard'));
+        $this->assertDatabaseHas('congresos', [
+            'id' => $congreso->id,
             'dictamen' => 'aceptada',
-        ])->assertRedirect(route('administracion.congresos.index'));
+        ]);
+
+        $this->actingAs($administrador)
+            ->get(route('administracion.congresos.index'))
+            ->assertOk()
+            ->assertSee('Historial de propuestas con extenso aceptado')
+            ->assertSee('Propuesta archivada. Solo disponible para consulta.')
+            ->assertSee(route('administracion.congresos.propuesta.extenso', $propuesta))
+            ->assertDontSee(route('administracion.propuestas.assign-evaluator', $propuesta))
+            ->assertDontSee('name="dictamen"', false)
+            ->assertSee('Dictamen:</strong> <span class="badge bg-green-lt">Aceptada', false);
+        $this->get(route('administracion.congresos.propuesta.extenso', $propuesta))
+            ->assertOk()
+            ->assertHeader('content-disposition', 'attachment; filename=extensa-aceptada.pdf');
+        $this->patch(route('administracion.propuestas.assign-evaluator', $propuesta), [
+            'evaluador_id' => $evaluadorDocente->id,
+        ])->assertNotFound();
+
+        $this->patch(route('administracion.congresos.update', $congreso), [
+            'dictamen' => 'rechazada',
+        ])->assertNotFound();
 
         $this->assertDatabaseHas('congresos', [
             'id' => $congreso->id,

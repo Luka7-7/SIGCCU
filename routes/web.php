@@ -20,6 +20,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/congresos', [DocenteController::class, 'store'])->name('congresos.store');
         Route::patch('/propuestas/{propuesta}/aceptar', [DocenteController::class, 'acceptProposal'])
             ->name('propuestas.accept');
+        Route::get('/propuestas/{propuesta}/pdf', [DocenteController::class, 'viewProposal'])
+            ->name('propuestas.pdf');
+        Route::get('/propuestas/{propuesta}/extenso', [DocenteController::class, 'viewExtendedProposal'])
+            ->name('propuestas.extenso');
+        Route::post('/propuestas/{propuesta}/extenso', [DocenteController::class, 'storeExtendedProposal'])
+            ->name('propuestas.extenso.store');
+        Route::post('/propuestas/{propuesta}/comentarios', [DocenteController::class, 'storeComment'])
+            ->name('propuestas.comments.store');
     });
 
     Route::middleware('administrador')->prefix('administracion')->name('administracion.')->group(function () {
@@ -28,6 +36,8 @@ Route::middleware('auth')->group(function () {
             ->name('congresos.solicitud');
         Route::get('/congresos/propuestas/{propuesta}', [RevisionCongresoController::class, 'downloadPropuesta'])
             ->name('congresos.propuesta');
+        Route::get('/congresos/propuestas/{propuesta}/extenso', [RevisionCongresoController::class, 'downloadExtenso'])
+            ->name('congresos.propuesta.extenso');
         Route::patch('/congresos/{congreso}', [RevisionCongresoController::class, 'update'])
             ->name('congresos.update');
         Route::patch('/propuestas/{propuesta}/evaluador', [RevisionCongresoController::class, 'assignEvaluator'])

@@ -2,20 +2,29 @@
   <div class="container-xl py-4">
     <div class="page-header mb-4">
       <h1 class="page-title">Portal docente</h1>
-      <p class="text-secondary mb-0">Consulta tus datos y envía solicitudes de congreso y propuestas académicas.</p>
+      <p class="text-secondary mb-0">Consulta tus datos, revisa propuestas asignadas y envía solicitudes de congreso.</p>
     </div>
 
     @if (session('status'))
       <div class="alert alert-success" role="alert">{{ session('status') }}</div>
     @endif
 
-    @if (isset($evaluaciones) && $evaluaciones->isNotEmpty())
+    @php
+      $historialEvaluaciones = $evaluaciones->filter(
+        fn ($evaluacion) => $evaluacion->extenso_url && $evaluacion->resumen_estado === 'Aceptado'
+      );
+      $evaluacionesActivas = $evaluaciones->reject(
+        fn ($evaluacion) => $evaluacion->extenso_url && $evaluacion->resumen_estado === 'Aceptado'
+      );
+    @endphp
+
+    @if ($evaluacionesActivas->isNotEmpty())
       <div class="card mb-4">
         <div class="card-header">
           <h2 class="card-title">Solicitudes de evaluación</h2>
         </div>
         <div class="list-group list-group-flush">
-          @foreach ($evaluaciones as $evaluacion)
+          @foreach ($evaluacionesActivas as $evaluacion)
             <div class="list-group-item">
               <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div>
@@ -26,6 +35,9 @@
                   <span class="badge {{ $evaluacion->evaluador_aceptado ? 'bg-green-lt' : 'bg-yellow-lt' }}">
                     {{ $evaluacion->evaluador_aceptado ? 'Asignación aceptada' : 'Pendiente de aceptación' }}
                   </span>
+                  @if ($evaluacion->evaluador_aceptado)
+                    <span class="badge bg-azure-lt">{{ $evaluacion->resumen_estado }}</span>
+                  @endif
                 </div>
                 @unless ($evaluacion->evaluador_aceptado)
                   <form method="POST" action="{{ route('docente.propuestas.accept', $evaluacion) }}">
@@ -35,6 +47,124 @@
                   </form>
                 @endunless
               </div>
+              @if ($evaluacion->evaluador_aceptado)
+                <div class="mt-3">
+                  <a
+                    class="btn btn-outline-primary"
+                    href="{{ route('docente.propuestas.pdf', $evaluacion) }}"
+                    target="_blank"
+                    rel="noopener"
+                  >Leer resumen (PDF)</a>
+                  @if ($evaluacion->extenso_url)
+                    <a
+                      class="btn btn-outline-primary ms-2"
+                      href="{{ route('docente.propuestas.extenso', $evaluacion) }}"
+                      target="_blank"
+                      rel="noopener"
+                    >Leer propuesta extensa (PDF)</a>
+                  @endif
+                </div>
+
+                @if ($evaluacion->comentarios->isNotEmpty())
+                  <div class="mt-3">
+                    <h4 class="h4">Devoluciones anteriores</h4>
+                    <ul class="mb-0">
+                      @foreach ($evaluacion->comentarios as $comentario)
+                        <li>{{ $comentario->Comentario }}</li>
+                      @endforeach
+                    </ul>
+                  </div>
+                @endif
+
+                <form
+                  method="POST"
+                  action="{{ route('docente.propuestas.comments.store', $evaluacion) }}"
+                  class="mt-3"
+                >
+                  @csrf
+                  <label for="comentario-{{ $evaluacion->id }}" class="form-label">Devolución para el autor</label>
+                  <textarea
+                    id="comentario-{{ $evaluacion->id }}"
+                    name="comentario"
+                    class="form-control"
+                    rows="3"
+                    maxlength="256"
+                    required
+                  >{{ old('comentario') }}</textarea>
+                  @error('comentario')
+                    <div class="text-danger mt-1" role="alert">{{ $message }}</div>
+                  @enderror
+                  <label for="estado-{{ $evaluacion->id }}" class="form-label mt-3">
+                    {{ $evaluacion->extenso_url ? 'Estado de la propuesta extensa' : 'Estado del resumen' }}
+                  </label>
+                  <select
+                    id="estado-{{ $evaluacion->id }}"
+                    name="resumen_estado"
+                    class="form-select"
+                    required
+                  >
+                    <option value="">Selecciona un estado</option>
+                    @foreach (['A corregir', 'Aceptado', 'Rechazado'] as $estado)
+                      <option
+                        value="{{ $estado }}"
+                        @selected(old('resumen_estado', $evaluacion->resumen_estado) === $estado)
+                      >{{ $estado }}</option>
+                    @endforeach
+                  </select>
+                  @error('resumen_estado')
+                    <div class="text-danger mt-1" role="alert">{{ $message }}</div>
+                  @enderror
+                  <button type="submit" class="btn btn-primary mt-2">Enviar comentarios</button>
+                </form>
+              @endif
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
+
+    @if ($historialEvaluaciones->isNotEmpty())
+      <div class="card mb-4">
+        <div class="card-header">
+          <h2 class="card-title">Historial de propuestas evaluadas</h2>
+        </div>
+        <div class="list-group list-group-flush">
+          @foreach ($historialEvaluaciones as $evaluacion)
+            <div class="list-group-item">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                  <h3 class="h3 mb-1">{{ $evaluacion->congreso?->nombre ?? 'Congreso' }}</h3>
+                  <p class="text-secondary mb-1">
+                    Propuesta de {{ $evaluacion->usuario?->nombre_completo ?? 'Usuario eliminado' }}
+                  </p>
+                  <span class="badge bg-green-lt">Propuesta extensa aceptada</span>
+                </div>
+                <div>
+                  <a
+                    class="btn btn-outline-primary"
+                    href="{{ route('docente.propuestas.pdf', $evaluacion) }}"
+                    target="_blank"
+                    rel="noopener"
+                  >Leer resumen (PDF)</a>
+                  <a
+                    class="btn btn-outline-primary ms-2"
+                    href="{{ route('docente.propuestas.extenso', $evaluacion) }}"
+                    target="_blank"
+                    rel="noopener"
+                  >Leer propuesta extensa (PDF)</a>
+                </div>
+              </div>
+              @if ($evaluacion->comentarios->isNotEmpty())
+                <div class="mt-3">
+                  <h4 class="h4">Historial de devoluciones</h4>
+                  <ul class="mb-0">
+                    @foreach ($evaluacion->comentarios as $comentario)
+                      <li>{{ $comentario->Comentario }}</li>
+                    @endforeach
+                  </ul>
+                </div>
+              @endif
+              <p class="text-secondary mt-3 mb-0">Evaluación finalizada. No se permiten más cambios.</p>
             </div>
           @endforeach
         </div>
@@ -64,7 +194,8 @@
       <div class="card-body">
         <p class="text-secondary">
           La solicitud del congreso quedará pendiente de revisión por la administración.
-          Adjunta un PDF para la solicitud y otro para la propuesta académica.
+          Adjunta el PDF de solicitud y el resumen de la propuesta. El extenso se habilitará
+          cuando recibas el primer comentario del evaluador.
         </p>
 
         @if ($errors->any())
@@ -231,9 +362,9 @@
               <div class="form-hint">PDF de hasta 10 MB.</div>
             </div>
             <div class="col-md-6">
-              <label for="propuesta_pdf" class="form-label">PDF de propuesta académica</label>
+              <label for="propuesta_pdf" class="form-label">PDF del resumen de propuesta</label>
               <input id="propuesta_pdf" name="propuesta_pdf" type="file" accept=".pdf,application/pdf" class="form-control" required>
-              <div class="form-hint">Se asociará al congreso solicitado. PDF de hasta 10 MB.</div>
+              <div class="form-hint">Resumen de hasta 10 MB. El PDF extenso se solicitará después de recibir el primer comentario.</div>
             </div>
           </div>
 
@@ -256,6 +387,8 @@
               <th>Programas participantes</th>
               <th>Estado de revisión</th>
               <th>Propuesta académica</th>
+              <th>Devolución del evaluador</th>
+              <th>Propuesta extensa</th>
             </tr>
           </thead>
           <tbody>
@@ -271,10 +404,84 @@
                   @endif
                 </td>
                 <td>{{ $congreso->propuestas->first()?->resumen_estado ?? 'Sin propuesta' }}</td>
+                <td>
+                  @forelse ($congreso->propuestas->flatMap->comentarios as $comentario)
+                    <p class="mb-1">{{ $comentario->Comentario }}</p>
+                  @empty
+                    <span class="text-secondary">Sin comentarios</span>
+                  @endforelse
+                </td>
+                <td>
+                  @forelse ($congreso->propuestas as $propuesta)
+                    @if ($propuesta->extenso_url)
+                      <p>
+                        <a href="{{ route('docente.propuestas.extenso', $propuesta) }}" target="_blank" rel="noopener">
+                          Leer propuesta extensa (PDF)
+                        </a>
+                      </p>
+                    @endif
+
+                    @if (! $propuesta->extenso_url && $propuesta->resumen_estado === 'Aceptado')
+                      <form
+                        method="POST"
+                        action="{{ route('docente.propuestas.extenso.store', $propuesta) }}"
+                        enctype="multipart/form-data"
+                        class="mb-3"
+                      >
+                        @csrf
+                        <label for="extenso-pdf-{{ $propuesta->id }}" class="form-label">Subir PDF extenso</label>
+                        <input
+                          id="extenso-pdf-{{ $propuesta->id }}"
+                          name="extenso_pdf"
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          class="form-control"
+                          required
+                        >
+                        <div class="form-hint">PDF de hasta 10 MB.</div>
+                        @error('extenso_pdf')
+                          <div class="text-danger mt-1" role="alert">{{ $message }}</div>
+                        @enderror
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">Enviar propuesta extensa</button>
+                      </form>
+                    @elseif ($propuesta->extenso_url && $propuesta->resumen_estado === 'Aceptado')
+                      <span class="badge bg-green-lt">Propuesta extensa aceptada. No se permiten cambios.</span>
+                    @elseif ($propuesta->extenso_url && $propuesta->resumen_estado === 'A corregir')
+                      <form
+                        method="POST"
+                        action="{{ route('docente.propuestas.extenso.store', $propuesta) }}"
+                        enctype="multipart/form-data"
+                        class="mb-3"
+                      >
+                        @csrf
+                        <label for="extenso-pdf-{{ $propuesta->id }}" class="form-label">Corregir PDF extenso</label>
+                        <input
+                          id="extenso-pdf-{{ $propuesta->id }}"
+                          name="extenso_pdf"
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          class="form-control"
+                          required
+                        >
+                        <div class="form-hint">PDF de hasta 10 MB.</div>
+                        @error('extenso_pdf')
+                          <div class="text-danger mt-1" role="alert">{{ $message }}</div>
+                        @enderror
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">Enviar corrección</button>
+                      </form>
+                    @elseif ($propuesta->extenso_url)
+                      <span class="text-secondary">Propuesta extensa en revisión; no se puede modificar.</span>
+                    @else
+                      <span class="text-secondary">Disponible cuando el resumen sea aceptado.</span>
+                    @endif
+                  @empty
+                    <span class="text-secondary">Sin propuesta</span>
+                  @endforelse
+                </td>
               </tr>
             @empty
               <tr>
-                <td colspan="4" class="text-secondary">Aún no has enviado solicitudes.</td>
+                <td colspan="6" class="text-secondary">Aún no has enviado solicitudes.</td>
               </tr>
             @endforelse
           </tbody>

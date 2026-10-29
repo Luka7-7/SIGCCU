@@ -28,6 +28,7 @@ class RevisionCongresoController extends Controller
                     'programas',
                     'propuestas.usuario',
                     'propuestas.evaluador.usuario',
+                    'propuestas.comentarios',
                 ])
                 ->orderByRaw('CASE WHEN dictamen IS NULL THEN 0 ELSE 1 END')
                 ->orderByDesc('solicitada_en')
@@ -62,9 +63,27 @@ class RevisionCongresoController extends Controller
         return Storage::disk('local')->download($path);
     }
 
+    public function downloadExtenso(Propuesta $propuesta): StreamedResponse
+    {
+        $propuesta->loadMissing('congreso');
+        abort_unless($propuesta->congreso?->solicitante_id !== null, 404);
+
+        $path = $propuesta->extenso_url;
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->download($path);
+    }
+
     public function update(Request $request, Congreso $congreso): RedirectResponse
     {
         abort_unless($congreso->solicitante_id !== null, 404);
+        abort_unless(
+            ! $congreso->propuestas()
+                ->whereNotNull('extenso_url')
+                ->where('resumen_estado', 'Aceptado')
+                ->exists(),
+            404
+        );
 
         $data = $request->validate([
             'dictamen' => [
@@ -86,6 +105,10 @@ class RevisionCongresoController extends Controller
     public function assignEvaluator(Request $request, Propuesta $propuesta): RedirectResponse
     {
         abort_unless($propuesta->congreso()->whereNotNull('solicitante_id')->exists(), 404);
+        abort_unless(
+            ! ($propuesta->extenso_url && $propuesta->resumen_estado === 'Aceptado'),
+            404
+        );
 
         $data = $request->validate([
             'evaluador_id' => [
