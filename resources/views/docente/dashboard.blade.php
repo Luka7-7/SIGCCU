@@ -389,6 +389,7 @@
               <th>Propuesta académica</th>
               <th>Devolución del evaluador</th>
               <th>Propuesta extensa</th>
+              <th>Conferencias y talleres</th>
             </tr>
           </thead>
           <tbody>
@@ -478,10 +479,20 @@
                     <span class="text-secondary">Sin propuesta</span>
                   @endforelse
                 </td>
+                <td>
+                  @if ($congreso->dictamen === 'aceptada')
+                    <a
+                      class="btn btn-outline-primary btn-sm"
+                      href="{{ route('docente.congresos.activities', $congreso) }}"
+                    >Gestionar actividades</a>
+                  @else
+                    <span class="text-secondary">Disponible cuando el congreso sea aceptado.</span>
+                  @endif
+                </td>
               </tr>
             @empty
               <tr>
-                <td colspan="6" class="text-secondary">Aún no has enviado solicitudes.</td>
+                <td colspan="7" class="text-secondary">Aún no has enviado solicitudes.</td>
               </tr>
             @endforelse
           </tbody>

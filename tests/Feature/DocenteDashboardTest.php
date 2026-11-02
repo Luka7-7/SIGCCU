@@ -205,6 +205,115 @@ class DocenteDashboardTest extends TestCase
             ->assertSee('name="unidades_participantes[]"', false);
     }
 
+    public function test_creator_can_manage_activities_only_for_an_accepted_congress(): void
+    {
+        $docente = $this->createUser('docente');
+        $otroDocente = $this->createUser('docente');
+        $congreso = \App\Models\Congreso::create([
+            'nombre' => 'Congreso aprobado',
+            'siglas' => 'CA',
+            'edicion' => 1,
+            'fecha_inicio' => '2027-03-10',
+            'fecha_fin' => '2027-03-12',
+            'registro_abre' => '2027-01-01 09:00',
+            'registro_cierre' => '2027-02-01 18:00',
+            'descripcion' => 'Congreso aprobado para prueba.',
+            'minimo_talleres' => 0,
+            'minimo_conferencias' => 0,
+            'eje_tematico' => 'Innovación',
+            'dictamen' => 'aceptada',
+            'solicitante_id' => $docente->id,
+        ]);
+
+        $this->actingAs($docente)
+            ->get(route('docente.dashboard'))
+            ->assertOk()
+            ->assertSee(route('docente.congresos.activities', $congreso))
+            ->assertSee('Gestionar actividades');
+
+        $this->actingAs($docente)
+            ->get(route('docente.congresos.activities', $congreso))
+            ->assertOk()
+            ->assertSee('Habilitar conferencia o taller')
+            ->assertSee('name="tipo"', false)
+            ->assertSee('name="ubicacion"', false)
+            ->assertSee('name="cupo"', false)
+            ->assertSee('name="fecha"', false);
+
+        $this->post(route('docente.congresos.activities.store', $congreso), [
+            'descripcion' => 'Taller de prototipado',
+            'tipo' => 'taller',
+            'cupo' => 25,
+            'ubicacion' => 'Aula 4',
+            'fecha' => '2027-03-11',
+            'hora_inicio' => '09:00',
+            'hora_fin' => '11:30',
+        ])
+            ->assertRedirect(route('docente.congresos.activities', $congreso))
+            ->assertSessionHas('status', 'La conferencia o taller se habilitó correctamente.');
+
+        $this->assertDatabaseHas('conferencias_talleres', [
+            'descripcion' => 'Taller de prototipado',
+            'tipo' => 'taller',
+            'cupo' => 25,
+            'ubicacion' => 'Aula 4',
+            'congreso_id' => $congreso->id,
+        ]);
+
+        $this->get(route('docente.congresos.activities', $congreso))
+            ->assertOk()
+            ->assertSee('Taller de prototipado')
+            ->assertSee('Aula 4');
+
+        $this->actingAs($otroDocente)
+            ->get(route('docente.congresos.activities', $congreso))
+            ->assertNotFound();
+        $this->post(route('docente.congresos.activities.store', $congreso), [
+            'descripcion' => 'Actividad no autorizada',
+        ])->assertNotFound();
+
+        $congreso->update(['dictamen' => null]);
+        $this->actingAs($docente)
+            ->get(route('docente.congresos.activities', $congreso))
+            ->assertNotFound();
+    }
+
+    public function test_activity_date_and_time_must_fit_the_congress_schedule(): void
+    {
+        $docente = $this->createUser('docente');
+        $congreso = \App\Models\Congreso::create([
+            'nombre' => 'Congreso aprobado',
+            'siglas' => 'CA',
+            'edicion' => 1,
+            'fecha_inicio' => '2027-03-10',
+            'fecha_fin' => '2027-03-12',
+            'registro_abre' => '2027-01-01 09:00',
+            'registro_cierre' => '2027-02-01 18:00',
+            'descripcion' => 'Congreso aprobado para prueba.',
+            'minimo_talleres' => 0,
+            'minimo_conferencias' => 0,
+            'eje_tematico' => 'Innovación',
+            'dictamen' => 'aceptada',
+            'solicitante_id' => $docente->id,
+        ]);
+
+        $this->actingAs($docente)
+            ->from(route('docente.congresos.activities', $congreso))
+            ->post(route('docente.congresos.activities.store', $congreso), [
+                'descripcion' => 'Conferencia fuera de horario',
+                'tipo' => 'conferencia',
+                'cupo' => 30,
+                'ubicacion' => 'Auditorio',
+                'fecha' => '2027-03-13',
+                'hora_inicio' => '11:00',
+                'hora_fin' => '10:00',
+            ])
+            ->assertRedirect(route('docente.congresos.activities', $congreso))
+            ->assertSessionHasErrors(['fecha', 'hora_fin']);
+
+        $this->assertDatabaseCount('conferencias_talleres', 0);
+    }
+
     public function test_docente_profile_redirects_to_the_docente_dashboard(): void
     {
         $docente = $this->createUser('docente');

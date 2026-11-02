@@ -58,6 +58,65 @@ class DocenteController extends Controller
             ->with('status', 'Aceptaste la asignación para evaluar la propuesta.');
     }
 
+    public function activities(Request $request, Congreso $congreso): View
+    {
+        $this->authorizeCongressActivities($request, $congreso);
+
+        return view('docente.congresos.activities', [
+            'congreso' => $congreso->load([
+                'conferenciasTalleres' => fn ($query) => $query
+                    ->orderBy('fecha')
+                    ->orderBy('hora_inicio'),
+            ]),
+        ]);
+    }
+
+    public function storeActivity(Request $request, Congreso $congreso): RedirectResponse
+    {
+        $this->authorizeCongressActivities($request, $congreso);
+
+        $data = $request->validate([
+            'descripcion' => ['required', 'string', 'max:5000'],
+            'tipo' => ['required', Rule::in(['conferencia', 'taller'])],
+            'cupo' => ['required', 'integer', 'min:1'],
+            'ubicacion' => ['required', 'string', 'max:100'],
+            'fecha' => [
+                'required',
+                'date',
+                'after_or_equal:'.$congreso->fecha_inicio->toDateString(),
+                'before_or_equal:'.$congreso->fecha_fin->toDateString(),
+            ],
+            'hora_inicio' => ['required', 'date_format:H:i'],
+            'hora_fin' => ['required', 'date_format:H:i', 'after:hora_inicio'],
+        ], [
+            'descripcion.required' => 'Escribe la descripción de la actividad.',
+            'descripcion.max' => 'La descripción no debe exceder 5000 caracteres.',
+            'tipo.required' => 'Selecciona si es conferencia o taller.',
+            'tipo.in' => 'El tipo de actividad seleccionado no es válido.',
+            'cupo.required' => 'Indica el cupo de la actividad.',
+            'cupo.min' => 'El cupo debe ser de al menos una persona.',
+            'ubicacion.required' => 'Indica la ubicación de la actividad.',
+            'fecha.after_or_equal' => 'La fecha debe estar dentro de las fechas del congreso.',
+            'fecha.before_or_equal' => 'La fecha debe estar dentro de las fechas del congreso.',
+            'hora_fin.after' => 'La hora de finalización debe ser posterior a la hora de inicio.',
+        ]);
+
+        $congreso->conferenciasTalleres()->create($data);
+
+        return redirect()
+            ->route('docente.congresos.activities', $congreso)
+            ->with('status', 'La conferencia o taller se habilitó correctamente.');
+    }
+
+    private function authorizeCongressActivities(Request $request, Congreso $congreso): void
+    {
+        abort_unless(
+            $congreso->solicitante_id === $request->user()->id
+                && $congreso->dictamen === 'aceptada',
+            404
+        );
+    }
+
     public function viewProposal(Request $request, Propuesta $propuesta): BinaryFileResponse
     {
         $this->authorizeAcceptedEvaluation($request, $propuesta);

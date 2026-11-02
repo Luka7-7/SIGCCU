@@ -18,6 +18,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('docente')->prefix('docente')->name('docente.')->group(function () {
         Route::get('/dashboard', [DocenteController::class, 'index'])->name('dashboard');
         Route::post('/congresos', [DocenteController::class, 'store'])->name('congresos.store');
+        Route::get('/congresos/{congreso}/actividades', [DocenteController::class, 'activities'])
+            ->name('congresos.activities');
+        Route::post('/congresos/{congreso}/actividades', [DocenteController::class, 'storeActivity'])
+            ->name('congresos.activities.store');
         Route::patch('/propuestas/{propuesta}/aceptar', [DocenteController::class, 'acceptProposal'])
             ->name('propuestas.accept');
         Route::get('/propuestas/{propuesta}/pdf', [DocenteController::class, 'viewProposal'])
