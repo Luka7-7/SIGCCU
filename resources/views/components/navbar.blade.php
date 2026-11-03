@@ -65,6 +65,13 @@
               <!-- BEGIN NAVBAR MENU -->
               <ul class="navbar-nav">
                 <!-- BEGIN NAVBAR ITEM -->
+                @if (in_array(auth()->user()->rol, ['alumno', 'docente'], true))
+                  <li class="nav-item">
+                    <a class="nav-link" href="{{ route('congresos.index') }}">
+                      <span class="nav-link-title">Congresos</span>
+                    </a>
+                  </li>
+                @endif
                 <li class="nav-item active dropdown">
                   <a class="nav-link" href="{{ auth()->user()->rol === 'administrador' ? route('administracion.congresos.index') : (auth()->user()->rol === 'docente' ? route('docente.dashboard') : route('profile')) }}"
                     role="button" aria-haspopup="true" aria-expanded="false">

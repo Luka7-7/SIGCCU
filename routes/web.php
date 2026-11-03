@@ -5,11 +5,21 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\DocenteController;
+use App\Http\Controllers\InscripcionCongresoController;
 use App\Http\Controllers\Administracion\RevisionCongresoController;
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
+
+    Route::middleware('academico')->group(function () {
+        Route::get('/congresos', [InscripcionCongresoController::class, 'index'])
+            ->name('congresos.index');
+        Route::get('/congresos/{congreso}/actividades', [InscripcionCongresoController::class, 'activities'])
+            ->name('congresos.activities');
+        Route::post('/congresos/{congreso}/inscripcion', [InscripcionCongresoController::class, 'store'])
+            ->name('congresos.inscripcion.store');
+    });
 
     Route::get('/profile', fn() => request()->user()->rol === 'docente'
         ? redirect()->route('docente.dashboard')

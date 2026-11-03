@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\EnsureDocente;
 use App\Http\Middleware\EnsureAdministrador;
+use App\Http\Middleware\EnsureAlumnoODocente;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => RedirectIfAuthenticated::class,
             'docente' => EnsureDocente::class,
             'administrador' => EnsureAdministrador::class,
+            'academico' => EnsureAlumnoODocente::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
