@@ -6,10 +6,6 @@
     
     <title>{{ $title ?? 'Autenticación' }}</title>
 
-    <style>
-      [x-cloak] { display: none !important; }
-    </style>
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
   </head>
   <body class="d-flex flex-column">

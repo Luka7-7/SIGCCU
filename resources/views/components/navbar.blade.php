@@ -64,15 +64,7 @@
             <nav aria-label="Primary" class="nav-overflow nav-overflow-initialized" data-bs-toggle="nav-overflow">
               <!-- BEGIN NAVBAR MENU -->
               <ul class="navbar-nav">
-                <!-- BEGIN NAVBAR ITEM -->
-                @if (in_array(auth()->user()->rol, ['alumno', 'docente'], true))
-                  <li class="nav-item">
-                    <a class="nav-link" href="{{ route('congresos.index') }}">
-                      <span class="nav-link-title">Congresos</span>
-                    </a>
-                  </li>
-                @endif
-                <li class="nav-item active dropdown">
+                <li class="nav-item">
                   <a class="nav-link" href="{{ auth()->user()->rol === 'administrador' ? route('administracion.congresos.index') : (auth()->user()->rol === 'docente' ? route('docente.dashboard') : route('profile')) }}"
                     role="button" aria-haspopup="true" aria-expanded="false">
                     <span class="nav-link-icon"><!-- Download SVG icon from http://tabler.io/icons/icon/home -->
@@ -87,6 +79,43 @@
                     <span class="nav-link-title">Tablero</span>
                   </a>
                 </li>
+                <!-- BEGIN NAVBAR ITEM -->
+
+                <li class="nav-item {{ request()->routeIs('docente.dashboard') ? 'active' : '' }}">
+                  <a class="nav-link" href="{{ auth()->user()->rol === 'administrador' ? route('administracion.congresos.index') : (auth()->user()->rol === 'docente' ? route('docente.dashboard') : route('profile')) }}"
+                    role="button" aria-haspopup="true" aria-expanded="false">
+                    <span class="nav-link-icon">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-bank">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                      <path d="M3 21l18 0" />
+                      <path d="M3 10l18 0" />
+                      <path d="M5 6l7 -3l7 3" />
+                      <path d="M4 10l0 11" />
+                      <path d="M20 10l0 11" />
+                      <path d="M8 14l0 3" />
+                      <path d="M12 14l0 3" />
+                      <path d="M16 14l0 3" />
+                    </svg>
+                    </span>
+                    <span class="nav-link-title">Mis Congresos</span>
+                  </a>
+                </li>
+                 @if (in_array(auth()->user()->rol, ['alumno', 'docente'], true))
+                  <li class="nav-item {{ request()->routeIs('congresos.index') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('congresos.index') }}">
+                      <span class="nav-link-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-world-map">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M20 8h-2a2 2 0 0 0 -2 2a2 2 0 1 1 -4 0v-1a2 2 0 0 0 -2 -2h-1a2 2 0 0 1 -2 -2v-.5" />
+                        <path d="M3 12h3a2 2 0 0 1 2 2v.5a1.5 1.5 0 0 0 1.5 1.5a1.5 1.5 0 0 1 1.5 1.5v3.25" />
+                        <path d="M15 20.5v-3.5a2 2 0 0 1 2 -2h3.5" />
+                        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                      </svg>
+                    </span>
+                      <span class="nav-link-title">Explorar</span>
+                    </a>
+                  </li>
+                @endif
               </ul>
               <!-- END NAVBAR MENU -->
             </nav>
