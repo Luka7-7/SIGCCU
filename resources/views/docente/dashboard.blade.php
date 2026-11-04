@@ -390,6 +390,7 @@
               <th>Devolución del evaluador</th>
               <th>Propuesta extensa</th>
               <th>Conferencias y talleres</th>
+              <th>Staff organizador</th>
             </tr>
           </thead>
           <tbody>
@@ -489,10 +490,33 @@
                     <span class="text-secondary">Disponible cuando el congreso sea aceptado.</span>
                   @endif
                 </td>
+                <td>
+                  @forelse ($congreso->inscripciones as $inscripcion)
+                    <div class="mb-2">
+                      <strong>{{ $inscripcion->usuario?->nombre_completo ?? 'Usuario eliminado' }}</strong>
+                      @if ($inscripcion->aceptado)
+                        <span class="badge bg-green-lt">Aceptado</span>
+                      @else
+                        <span class="badge bg-yellow-lt">Pendiente</span>
+                        <form
+                          method="POST"
+                          action="{{ route('docente.congresos.organizador.accept', [$congreso, $inscripcion->usuario]) }}"
+                          class="mt-1"
+                        >
+                          @csrf
+                          @method('PATCH')
+                          <button type="submit" class="btn btn-primary btn-sm">Aceptar postulación</button>
+                        </form>
+                      @endif
+                    </div>
+                  @empty
+                    <span class="text-secondary">Sin postulaciones</span>
+                  @endforelse
+                </td>
               </tr>
             @empty
               <tr>
-                <td colspan="7" class="text-secondary">Aún no has enviado solicitudes.</td>
+                <td colspan="8" class="text-secondary">Aún no has enviado solicitudes.</td>
               </tr>
             @endforelse
           </tbody>

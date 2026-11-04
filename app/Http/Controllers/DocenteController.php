@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Carrera;
 use App\Models\Congreso;
+use App\Models\InscripcionCongreso;
 use App\Models\Propuesta;
+use App\Models\Usuario;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +25,13 @@ class DocenteController extends Controller
         return view('docente.dashboard', [
             'usuario' => $usuario,
             'congresos' => $usuario->congresosSolicitados()
-                ->with(['programas', 'propuestas.comentarios'])
+                ->with([
+                    'programas',
+                    'propuestas.comentarios',
+                    'inscripciones' => fn ($query) => $query
+                        ->where('rol_congreso', 'organizador')
+                        ->with('usuario'),
+                ])
                 ->orderByDesc('id')
                 ->get(),
             'evaluaciones' => $usuario->evaluador?->propuestas()
@@ -38,6 +46,35 @@ class DocenteController extends Controller
                 ->orderBy('nombre_carrera')
                 ->get(),
         ]);
+    }
+
+    public function acceptOrganizer(
+        Request $request,
+        Congreso $congreso,
+        Usuario $usuario
+    ): RedirectResponse {
+        abort_unless($congreso->solicitante_id === $request->user()->id, 404);
+
+        DB::transaction(function () use ($congreso, $usuario): void {
+            $inscripcion = InscripcionCongreso::query()
+                ->where('congreso_id', $congreso->id)
+                ->where('usuario_id', $usuario->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless($inscripcion->rol_congreso === 'organizador', 404);
+
+            if (! $inscripcion->aceptado) {
+                $inscripcion->update([
+                    'aceptado' => true,
+                    'fecha_hora_respuesta' => now(),
+                ]);
+            }
+        });
+
+        return redirect()
+            ->route('docente.dashboard')
+            ->with('status', 'Aceptaste la postulación al staff organizador.');
     }
 
     public function acceptProposal(Request $request, Propuesta $propuesta): RedirectResponse

@@ -18,6 +18,8 @@
     @forelse ($congresos as $congreso)
       @php
         $inscripcionesAbiertas = now()->between($congreso->registro_abre, $congreso->registro_cierre);
+        $inscripcionUsuario = $congreso->inscripciones->first();
+        $postulacionOrganizador = $inscripcionUsuario?->rol_congreso === 'organizador';
       @endphp
       <article class="card mb-3">
         <div class="card-body">
@@ -36,7 +38,7 @@
               </p>
             </div>
 
-            <div>
+            <div class="d-flex flex-wrap gap-2">
               @if ($congreso->usuario_inscrito)
                 <span class="badge bg-green-lt">Ya estás inscrito</span>
               @elseif ($inscripcionesAbiertas)
@@ -47,6 +49,23 @@
                 <span class="badge bg-secondary-lt">
                   {{ now()->lt($congreso->registro_abre) ? 'Inscripción próximamente' : 'Inscripción cerrada' }}
                 </span>
+              @endif
+
+              @if ($postulacionOrganizador)
+                @if ($inscripcionUsuario->aceptado)
+                  <span class="badge bg-green-lt">Postulación aceptada: staff organizador</span>
+                @elseif ($inscripcionUsuario->fecha_hora_respuesta)
+                  <span class="badge bg-red-lt">Postulación rechazada</span>
+                @else
+                  <span class="badge bg-yellow-lt">Postulación pendiente: staff organizador</span>
+                @endif
+              @else
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#postulacion-organizador-{{ $congreso->id }}"
+                >Postularme como parte del staff organizador</button>
               @endif
             </div>
           </div>
@@ -71,6 +90,41 @@
               @endif
             </div>
           @endif
+
+          @unless ($postulacionOrganizador)
+            <div
+              class="modal modal-blur fade"
+              id="postulacion-organizador-{{ $congreso->id }}"
+              tabindex="-1"
+              role="dialog"
+              aria-labelledby="postulacion-organizador-titulo-{{ $congreso->id }}"
+              aria-hidden="true"
+            >
+              <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h2 class="modal-title" id="postulacion-organizador-titulo-{{ $congreso->id }}">
+                      Confirmar postulación
+                    </h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                  </div>
+                  <div class="modal-body">
+                    ¿Estás seguro de registrarte como parte del staff organizador de
+                    <strong>{{ $congreso->nombre }}</strong>?
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">
+                      Cancelar
+                    </button>
+                    <form method="POST" action="{{ route('congresos.organizador.store', $congreso) }}">
+                      @csrf
+                      <button type="submit" class="btn btn-primary">Sí, postularme</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          @endunless
         </div>
       </article>
     @empty

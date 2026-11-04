@@ -19,6 +19,8 @@ Route::middleware('auth')->group(function () {
             ->name('congresos.activities');
         Route::post('/congresos/{congreso}/inscripcion', [InscripcionCongresoController::class, 'store'])
             ->name('congresos.inscripcion.store');
+        Route::post('/congresos/{congreso}/organizador', [InscripcionCongresoController::class, 'applyAsOrganizer'])
+            ->name('congresos.organizador.store');
     });
 
     Route::get('/profile', fn() => request()->user()->rol === 'docente'
@@ -32,6 +34,8 @@ Route::middleware('auth')->group(function () {
             ->name('congresos.activities');
         Route::post('/congresos/{congreso}/actividades', [DocenteController::class, 'storeActivity'])
             ->name('congresos.activities.store');
+        Route::patch('/congresos/{congreso}/organizador/{usuario}/aceptar', [DocenteController::class, 'acceptOrganizer'])
+            ->name('congresos.organizador.accept');
         Route::patch('/propuestas/{propuesta}/aceptar', [DocenteController::class, 'acceptProposal'])
             ->name('propuestas.accept');
         Route::get('/propuestas/{propuesta}/pdf', [DocenteController::class, 'viewProposal'])

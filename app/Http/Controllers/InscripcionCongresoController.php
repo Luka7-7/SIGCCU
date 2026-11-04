@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Congreso;
 use App\Models\InscripcionConferenciaTaller;
+use App\Models\InscripcionCongreso;
 use App\Models\Usuario;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,10 @@ class InscripcionCongresoController extends Controller
             )
             ->withCount([
                 'inscripciones as usuario_inscrito' => fn ($inscripciones) => $inscripciones
+                    ->where('usuario_id', $usuario->id),
+            ])
+            ->with([
+                'inscripciones' => fn ($inscripciones) => $inscripciones
                     ->where('usuario_id', $usuario->id),
             ])
             ->with([
@@ -181,6 +186,51 @@ class InscripcionCongresoController extends Controller
         return redirect()
             ->route('congresos.index')
             ->with('status', 'Tu inscripción al congreso y a las actividades seleccionadas se registró correctamente.');
+    }
+
+    public function applyAsOrganizer(Request $request, Congreso $congreso): RedirectResponse
+    {
+        /** @var Usuario $usuario */
+        $usuario = $request->user();
+        $this->authorizeEligibleCongress($usuario, $congreso);
+
+        DB::transaction(function () use ($usuario, $congreso): void {
+            Usuario::query()->whereKey($usuario->id)->lockForUpdate()->firstOrFail();
+
+            $inscripcion = InscripcionCongreso::query()
+                ->where('usuario_id', $usuario->id)
+                ->where('congreso_id', $congreso->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($inscripcion?->rol_congreso === 'organizador') {
+                throw ValidationException::withMessages([
+                    'congreso' => 'Ya enviaste una postulación para formar parte del staff organizador.',
+                ]);
+            }
+
+            if ($inscripcion) {
+                $inscripcion->update([
+                    'rol_congreso' => 'organizador',
+                    'aceptado' => false,
+                    'fecha_hora_respuesta' => null,
+                ]);
+
+                return;
+            }
+
+            InscripcionCongreso::query()->create([
+                'usuario_id' => $usuario->id,
+                'congreso_id' => $congreso->id,
+                'fecha_hora_inscripcion' => now(),
+                'aceptado' => false,
+                'rol_congreso' => 'organizador',
+            ]);
+        });
+
+        return redirect()
+            ->route('congresos.index')
+            ->with('status', 'Tu postulación para formar parte del staff organizador se registró correctamente.');
     }
 
     private function authorizeEligibleCongress(Usuario $usuario, Congreso $congreso): void

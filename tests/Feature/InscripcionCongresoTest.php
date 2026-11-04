@@ -6,6 +6,7 @@ use App\Models\Carrera;
 use App\Models\ConferenciaTaller;
 use App\Models\Congreso;
 use App\Models\InscripcionConferenciaTaller;
+use App\Models\InscripcionCongreso;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -62,6 +63,154 @@ class InscripcionCongresoTest extends TestCase
         $this->assertDatabaseHas('inscripciones_congresos', [
             'usuario_id' => $docente->id,
             'congreso_id' => $congreso->id,
+        ]);
+    }
+
+    public function test_alumno_and_docente_can_apply_to_join_the_organizing_staff(): void
+    {
+        foreach (['alumno', 'docente'] as $rol) {
+            $usuario = $this->createUser($rol);
+            $congreso = $this->createCongress($usuario->carrera->nombre_carrera);
+
+            $this->actingAs($usuario)
+                ->get(route('congresos.index'))
+                ->assertOk()
+                ->assertSee('Postularme como parte del staff organizador')
+                ->assertSee('¿Estás seguro de registrarte como parte del staff organizador de');
+
+            $this->actingAs($usuario)
+                ->post(route('congresos.organizador.store', $congreso))
+                ->assertRedirect(route('congresos.index'))
+                ->assertSessionHas('status');
+
+            $this->assertDatabaseHas('inscripciones_congresos', [
+                'usuario_id' => $usuario->id,
+                'congreso_id' => $congreso->id,
+                'rol_congreso' => 'organizador',
+                'aceptado' => false,
+                'fecha_hora_respuesta' => null,
+            ]);
+        }
+    }
+
+    public function test_registered_user_can_apply_as_organizer_without_losing_activity_registration(): void
+    {
+        $alumno = $this->createUser('alumno');
+        $congreso = $this->createCongress($alumno->carrera->nombre_carrera);
+        $actividad = $this->createActivity($congreso, 'conferencia');
+        InscripcionCongreso::query()->create([
+            'usuario_id' => $alumno->id,
+            'congreso_id' => $congreso->id,
+            'rol_congreso' => 'asistente y/o ponente',
+            'aceptado' => true,
+        ]);
+        InscripcionConferenciaTaller::query()->create([
+            'usuario_id' => $alumno->id,
+            'conferencia_taller_id' => $actividad->id,
+        ]);
+
+        $this->actingAs($alumno)
+            ->post(route('congresos.organizador.store', $congreso))
+            ->assertRedirect(route('congresos.index'));
+
+        $this->assertDatabaseHas('inscripciones_congresos', [
+            'usuario_id' => $alumno->id,
+            'congreso_id' => $congreso->id,
+            'rol_congreso' => 'organizador',
+            'aceptado' => false,
+        ]);
+        $this->assertDatabaseHas('inscripciones_conferencias_talleres', [
+            'usuario_id' => $alumno->id,
+            'conferencia_taller_id' => $actividad->id,
+        ]);
+    }
+
+    public function test_user_cannot_submit_an_organizer_application_twice_or_for_an_ineligible_congress(): void
+    {
+        $alumno = $this->createUser('alumno');
+        $congreso = $this->createCongress($alumno->carrera->nombre_carrera);
+        $congresoNoApto = $this->createCongress('Otra carrera');
+
+        $this->actingAs($alumno)
+            ->post(route('congresos.organizador.store', $congreso))
+            ->assertRedirect(route('congresos.index'));
+
+        $this->from(route('congresos.index'))
+            ->actingAs($alumno)
+            ->post(route('congresos.organizador.store', $congreso))
+            ->assertRedirect(route('congresos.index'))
+            ->assertSessionHasErrors('congreso');
+
+        $this->actingAs($alumno)
+            ->post(route('congresos.organizador.store', $congresoNoApto))
+            ->assertNotFound();
+
+        $this->assertDatabaseCount('inscripciones_congresos', 1);
+    }
+
+    public function test_congress_requester_can_accept_an_organizer_application(): void
+    {
+        $solicitante = $this->createUser('docente');
+        $postulante = $this->createUser('alumno');
+        $congreso = $this->createCongress($postulante->carrera->nombre_carrera, [
+            'solicitante_id' => $solicitante->id,
+        ]);
+        InscripcionCongreso::query()->create([
+            'usuario_id' => $postulante->id,
+            'congreso_id' => $congreso->id,
+            'aceptado' => false,
+            'rol_congreso' => 'organizador',
+        ]);
+
+        $this->actingAs($solicitante)
+            ->get(route('docente.dashboard'))
+            ->assertOk()
+            ->assertSee($postulante->nombre_completo)
+            ->assertSee('Aceptar postulación');
+
+        $this->actingAs($solicitante)
+            ->patch(route('docente.congresos.organizador.accept', [$congreso, $postulante]))
+            ->assertRedirect(route('docente.dashboard'))
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('inscripciones_congresos', [
+            'usuario_id' => $postulante->id,
+            'congreso_id' => $congreso->id,
+            'rol_congreso' => 'organizador',
+            'aceptado' => true,
+        ]);
+        $this->assertNotNull(
+            InscripcionCongreso::query()
+                ->where('usuario_id', $postulante->id)
+                ->where('congreso_id', $congreso->id)
+                ->value('fecha_hora_respuesta')
+        );
+    }
+
+    public function test_only_the_congress_requester_can_accept_an_organizer_application(): void
+    {
+        $solicitante = $this->createUser('docente');
+        $otroDocente = $this->createUser('docente');
+        $postulante = $this->createUser('alumno');
+        $congreso = $this->createCongress($postulante->carrera->nombre_carrera, [
+            'solicitante_id' => $solicitante->id,
+        ]);
+        InscripcionCongreso::query()->create([
+            'usuario_id' => $postulante->id,
+            'congreso_id' => $congreso->id,
+            'aceptado' => false,
+            'rol_congreso' => 'organizador',
+        ]);
+
+        $this->actingAs($otroDocente)
+            ->patch(route('docente.congresos.organizador.accept', [$congreso, $postulante]))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('inscripciones_congresos', [
+            'usuario_id' => $postulante->id,
+            'congreso_id' => $congreso->id,
+            'aceptado' => false,
+            'rol_congreso' => 'organizador',
         ]);
     }
 
