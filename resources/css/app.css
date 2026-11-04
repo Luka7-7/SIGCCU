@@ -15,3 +15,103 @@ input[type="password"]::-ms-clear {
 span > a {
     color: #7D96A4;
 }
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* ==========================================================================
+   SIGCCU DESIGN SYSTEM — FIX MODAL FOOTER & TOMSELECT SCROLL
+   ========================================================================== */
+
+/* Asegurar que el modal conserve el pie de página siempre visible */
+#requestCongressModal .modal-content {
+    max-height: 90vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+/* El cuerpo del modal es el único contenedor que debe tener scroll vertical */
+#requestCongressModal .modal-body-scrollable {
+    max-height: calc(90vh - 130px);
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Pie de página del modal fijo en la parte inferior */
+#requestCongressModal .modal-footer {
+    flex-shrink: 0 !important;
+    background-color: var(--tblr-bg-surface, #ffffff) !important;
+    border-top: 1px solid var(--tblr-border-color, #dadcde) !important;
+    z-index: 10;
+}
+
+/* Menú desplegable de TomSelect: Elevación, Fondo Blanco Sólido y Sin Scroll Horizontal */
+body > .ts-dropdown,
+.ts-dropdown {
+    z-index: 1070 !important;
+    background-color: #ffffff !important;
+    border: 1px solid var(--tblr-border-color, #dadcde) !important;
+    border-radius: var(--tblr-border-radius, 4px) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+}
+
+.ts-dropdown .ts-dropdown-content {
+    background-color: #ffffff !important;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden !important;
+}
+
+.ts-dropdown .option {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+}
+
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+    background-color: var(--tblr-primary-lt, #eef2ff) !important;
+    color: var(--tblr-primary, #4263eb) !important;
+}
+
+/* Ancho del contenedor principal de TomSelect al 100% */
+#requestCongressModal .ts-wrapper {
+    width: 100% !important;
+}
+
+/* Campo de control principal ajustado al Design System */
+#requestCongressModal .ts-control {
+    min-height: 42px;
+    border-radius: var(--tblr-border-radius, 4px);
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+}
+
+/* Badges / Chips seleccionados */
+#requestCongressModal .ts-wrapper.multi .ts-control .item {
+    background: var(--tblr-primary-lt, #eef2ff);
+    color: var(--tblr-primary, #4263eb);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8125rem;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* Separador y botón de eliminación de chip (✕) */
+#requestCongressModal .ts-wrapper.plugin-remove_button .item .remove {
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    margin-left: 6px;
+    padding-left: 6px;
+}
+
+/* Cursor pointer y estilo para botones de carga */
+.cursor-pointer {
+    cursor: pointer;
+}
