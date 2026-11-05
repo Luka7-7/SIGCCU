@@ -1,9 +1,16 @@
 <x-layout.main title="Conferencias y talleres · SIGCCU">
   <div class="container-xl py-4">
     <div class="page-header mb-4">
-      <a href="{{ route('docente.dashboard') }}" class="btn btn-link px-0">← Volver al portal docente</a>
+      <a
+        href="{{ $puedeCrearActividad ? route('docente.dashboard') : route('congresos.index') }}"
+        class="btn btn-link px-0"
+      >← {{ $puedeCrearActividad ? 'Volver al portal docente' : 'Volver a congresos' }}</a>
       <h1 class="page-title">{{ $congreso->nombre }}</h1>
-      <p class="text-secondary mb-0">Gestiona las conferencias y talleres de este congreso.</p>
+      <p class="text-secondary mb-0">
+        {{ $puedeCrearActividad
+          ? 'Gestiona las conferencias, talleres y la asistencia del congreso.'
+          : 'Abre y consulta el registro de asistencia de las actividades.' }}
+      </p>
     </div>
 
     @if (session('status'))
@@ -20,6 +27,7 @@
       </div>
     @endif
 
+    @if ($puedeCrearActividad)
     <div class="card mb-4">
       <div class="card-header">
         <h2 class="card-title">Habilitar conferencia o taller</h2>
@@ -111,10 +119,11 @@
         </form>
       </div>
     </div>
+    @endif
 
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title">Actividades habilitadas</h2>
+        <h2 class="card-title">Actividades y asistencia</h2>
       </div>
       <div class="list-group list-group-flush">
         @forelse ($congreso->conferenciasTalleres as $actividad)
@@ -126,8 +135,22 @@
                 <span class="text-secondary">
                   {{ $actividad->fecha->format('d/m/Y') }} ·
                   {{ substr($actividad->hora_inicio, 0, 5) }}–{{ substr($actividad->hora_fin, 0, 5) }} ·
-                  {{ $actividad->ubicacion }} · Cupo: {{ $actividad->cupo }}
+                  {{ $actividad->ubicacion }} · Cupo: {{ $actividad->cupo }} ·
+                  Inscritos: {{ $actividad->inscripciones_count }} ·
+                  Asistencias registradas: {{ $actividad->asistencias_registradas_count }}
                 </span>
+              </div>
+              <div class="d-flex flex-column align-items-start gap-2">
+                @if ($actividad->asistencia_activa_hasta?->isFuture())
+                  <span class="badge bg-green-lt">
+                    Registro activo hasta {{ $actividad->asistencia_activa_hasta->format('H:i:s') }}
+                  </span>
+                @else
+                  <form method="POST" action="{{ route('asistencias.open', $actividad) }}">
+                    @csrf
+                    <button type="submit" class="btn btn-primary">Abrir asistencia por 5 minutos</button>
+                  </form>
+                @endif
               </div>
             </div>
           </div>

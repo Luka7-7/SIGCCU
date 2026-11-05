@@ -20,7 +20,7 @@
       </div>
     @endif
 
-    @if (! $yaInscritoCongreso && $errors->any())
+    @if ($errors->any())
       <div class="alert alert-danger" role="alert">
         <ul class="mb-0">
           @foreach ($errors->all() as $error)
@@ -28,6 +28,9 @@
           @endforeach
         </ul>
       </div>
+    @endif
+    @if (session('status'))
+      <div class="alert alert-success" role="status">{{ session('status') }}</div>
     @endif
 
     @php
@@ -59,30 +62,63 @@
               @php
                 $seleccionada = in_array($actividad->id, $seleccionadas);
                 $yaInscrito = in_array($actividad->id, $actividadesInscritas, true);
-                $lugaresDisponibles = $actividad->cupo - $actividad->inscripciones_count + ($yaInscrito ? 1 : 0);
+                $lugaresDisponibles = max(0, $actividad->cupo - $actividad->inscripciones_count);
+                $asistencia = $actividad->asistencias->first();
+                $asistenciaRegistrada = $asistencia
+                  && $asistencia->ip !== \App\Support\AttendanceWindow::pendingIp();
+                $ventanaAsistenciaActiva = $actividad->asistencia_activa_hasta?->isFuture()
+                  && $asistencia?->Activo;
               @endphp
-              <label class="list-group-item d-flex gap-3 align-items-start">
-                <input
-                  class="form-check-input mt-1"
-                  type="checkbox"
-                  name="actividades[]"
-                  value="{{ $actividad->id }}"
-                  @checked($yaInscritoCongreso || $seleccionada)
-                  @disabled($yaInscritoCongreso || ($lugaresDisponibles <= 0 && ! $seleccionada))
-                >
-                <span class="w-100">
-                  <span class="d-flex flex-wrap justify-content-between gap-2">
-                    <strong>{{ $actividad->descripcion }}</strong>
-                    <span class="badge bg-azure-lt">{{ ucfirst($actividad->tipo) }}</span>
+              <div class="list-group-item">
+                <label class="d-flex gap-3 align-items-start">
+                  <input
+                    class="form-check-input mt-1"
+                    type="checkbox"
+                    name="actividades[]"
+                    value="{{ $actividad->id }}"
+                    @checked($yaInscritoCongreso || $seleccionada)
+                    @disabled($yaInscritoCongreso || ($lugaresDisponibles <= 0 && ! $seleccionada))
+                  >
+                  <span class="w-100">
+                    <span class="d-flex flex-wrap justify-content-between gap-2">
+                      <strong>{{ $actividad->descripcion }}</strong>
+                      <span class="badge bg-azure-lt">{{ ucfirst($actividad->tipo) }}</span>
+                    </span>
+                    <span class="d-block text-secondary">
+                      {{ $actividad->fecha->format('d/m/Y') }} ·
+                      {{ substr($actividad->hora_inicio, 0, 5) }}–{{ substr($actividad->hora_fin, 0, 5) }} ·
+                      {{ $actividad->ubicacion }} ·
+                      Lugares disponibles: {{ $lugaresDisponibles }} de {{ $actividad->cupo }}
+                    </span>
                   </span>
-                  <span class="d-block text-secondary">
-                    {{ $actividad->fecha->format('d/m/Y') }} ·
-                    {{ substr($actividad->hora_inicio, 0, 5) }}–{{ substr($actividad->hora_fin, 0, 5) }} ·
-                    {{ $actividad->ubicacion }} ·
-                    Lugares disponibles: {{ max(0, $lugaresDisponibles) }} de {{ $actividad->cupo }}
-                  </span>
-                </span>
-              </label>
+                </label>
+                @if ($yaInscritoCongreso)
+                  <div class="mt-3 ms-4" data-asistencia
+                    data-status-url="{{ route('asistencias.status', $actividad) }}"
+                    data-marked="{{ $asistenciaRegistrada ? 'true' : 'false' }}">
+                    <p class="mb-2 text-secondary" data-asistencia-mensaje>
+                      @if ($asistenciaRegistrada)
+                        Asistencia registrada el {{ $asistencia->fecha_hora->format('d/m/Y H:i') }}.
+                      @elseif ($ventanaAsistenciaActiva)
+                        La ventana está abierta hasta {{ $actividad->asistencia_activa_hasta->format('H:i:s') }}.
+                      @else
+                        El registro de asistencia aún no está abierto.
+                      @endif
+                    </p>
+                    <form method="POST" action="{{ route('asistencias.store', $actividad) }}">
+                      @csrf
+                      <button
+                        type="submit"
+                        class="btn btn-success"
+                        data-asistencia-boton
+                        @disabled(! $ventanaAsistenciaActiva || $asistenciaRegistrada)
+                      >
+                        {{ $asistenciaRegistrada ? 'Asistencia registrada' : 'Registrar mi asistencia' }}
+                      </button>
+                    </form>
+                  </div>
+                @endif
+              </div>
             @empty
               <div class="list-group-item text-secondary">No hay {{ strtolower($titulo) }} habilitadas.</div>
             @endforelse
@@ -99,4 +135,49 @@
         </form>
       @endunless
   </div>
+  @if ($yaInscritoCongreso)
+    <script>
+      document.querySelectorAll('[data-asistencia]').forEach((panel) => {
+        const boton = panel.querySelector('[data-asistencia-boton]');
+        const mensaje = panel.querySelector('[data-asistencia-mensaje]');
+        let registrada = panel.dataset.marked === 'true';
+
+        const actualizarEstado = () => {
+          fetch(panel.dataset.statusUrl, { headers: { Accept: 'application/json' } })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error('No fue posible consultar el estado de asistencia.');
+              }
+
+              return response.json();
+            })
+            .then((estado) => {
+              registrada = estado.registrada;
+              boton.disabled = registrada || !estado.activa;
+              boton.textContent = registrada ? 'Asistencia registrada' : 'Registrar mi asistencia';
+              mensaje.textContent = registrada
+                ? `Asistencia registrada el ${estado.fecha_hora}.`
+                : estado.activa
+                  ? `La ventana está abierta hasta ${estado.vence_en}.`
+                  : 'El registro de asistencia aún no está abierto.';
+            })
+            .catch((error) => {
+              mensaje.textContent = error.message;
+              boton.disabled = true;
+            });
+        };
+
+        if (!registrada) {
+          const intervalo = window.setInterval(() => {
+            if (registrada) {
+              window.clearInterval(intervalo);
+              return;
+            }
+
+            actualizarEstado();
+          }, 5000);
+        }
+      });
+    </script>
+  @endif
 </x-layout.main>

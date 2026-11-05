@@ -6,6 +6,7 @@ use App\Models\Congreso;
 use App\Models\InscripcionConferenciaTaller;
 use App\Models\InscripcionCongreso;
 use App\Models\Usuario;
+use App\Support\AttendanceWindow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,7 @@ class InscripcionCongresoController extends Controller
             ])
             ->with([
                 'conferenciasTalleres' => fn ($actividades) => $actividades
+                    ->withCount('inscripciones')
                     ->whereHas(
                         'inscripciones',
                         fn ($inscripciones) => $inscripciones->where('usuario_id', $usuario->id)
@@ -62,8 +64,14 @@ class InscripcionCongresoController extends Controller
             ->exists();
         $consultaActividades = $congreso->conferenciasTalleres()
             ->withCount('inscripciones')
+            ->with([
+                'asistencias' => fn ($asistencias) => $asistencias
+                    ->where('usuario_id', $usuario->id),
+            ])
             ->orderBy('fecha')
             ->orderBy('hora_inicio');
+
+        AttendanceWindow::expireExpired();
 
         if ($yaInscritoCongreso) {
             $consultaActividades->whereHas(

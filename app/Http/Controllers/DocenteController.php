@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use App\Support\AttendanceWindow;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -97,11 +98,18 @@ class DocenteController extends Controller
 
     public function activities(Request $request, Congreso $congreso): View
     {
-        $this->authorizeCongressActivities($request, $congreso);
+        $this->authorizeCongressStaff($request, $congreso);
+        AttendanceWindow::expireExpired();
 
         return view('docente.congresos.activities', [
+            'puedeCrearActividad' => $congreso->solicitante_id === $request->user()->id,
             'congreso' => $congreso->load([
                 'conferenciasTalleres' => fn ($query) => $query
+                    ->withCount([
+                        'inscripciones',
+                        'asistencias as asistencias_registradas_count' => fn ($asistencias) => $asistencias
+                            ->where('ip', '<>', AttendanceWindow::pendingIp()),
+                    ])
                     ->orderBy('fecha')
                     ->orderBy('hora_inicio'),
             ]),
@@ -110,7 +118,7 @@ class DocenteController extends Controller
 
     public function storeActivity(Request $request, Congreso $congreso): RedirectResponse
     {
-        $this->authorizeCongressActivities($request, $congreso);
+        $this->authorizeCongressOwner($request, $congreso);
 
         $data = $request->validate([
             'descripcion' => ['required', 'string', 'max:5000'],
@@ -145,10 +153,27 @@ class DocenteController extends Controller
             ->with('status', 'La conferencia o taller se habilitó correctamente.');
     }
 
-    private function authorizeCongressActivities(Request $request, Congreso $congreso): void
+    private function authorizeCongressOwner(Request $request, Congreso $congreso): void
     {
         abort_unless(
             $congreso->solicitante_id === $request->user()->id
+                && $congreso->dictamen === 'aceptada',
+            404
+        );
+    }
+
+    private function authorizeCongressStaff(Request $request, Congreso $congreso): void
+    {
+        $esSolicitante = $congreso->solicitante_id === $request->user()->id;
+        $esOrganizadorAceptado = InscripcionCongreso::query()
+            ->where('congreso_id', $congreso->id)
+            ->where('usuario_id', $request->user()->id)
+            ->whereIn('rol_congreso', ['organizador', 'comite'])
+            ->where('aceptado', true)
+            ->exists();
+
+        abort_unless(
+            ($esSolicitante || $esOrganizadorAceptado)
                 && $congreso->dictamen === 'aceptada',
             404
         );

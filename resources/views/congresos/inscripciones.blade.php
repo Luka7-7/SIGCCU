@@ -20,6 +20,11 @@
         $inscripcionesAbiertas = now()->between($congreso->registro_abre, $congreso->registro_cierre);
         $inscripcionUsuario = $congreso->inscripciones->first();
         $postulacionOrganizador = $inscripcionUsuario?->rol_congreso === 'organizador';
+        $esStaff = $congreso->solicitante_id === $usuario->id
+          || (
+            in_array($inscripcionUsuario?->rol_congreso, ['organizador', 'comite'], true)
+            && $inscripcionUsuario->aceptado
+          );
       @endphp
       <article class="card mb-3">
         <div class="card-body">
@@ -41,6 +46,9 @@
             <div class="d-flex flex-wrap gap-2">
               @if ($congreso->usuario_inscrito)
                 <span class="badge bg-green-lt">Ya estás inscrito</span>
+                <a class="btn btn-outline-primary" href="{{ route('congresos.activities', $congreso) }}">
+                  Ver actividades y asistencia
+                </a>
               @elseif ($inscripcionesAbiertas)
                 <a class="btn btn-primary" href="{{ route('congresos.activities', $congreso) }}">
                   Seleccionar actividades
@@ -49,6 +57,12 @@
                 <span class="badge bg-secondary-lt">
                   {{ now()->lt($congreso->registro_abre) ? 'Inscripción próximamente' : 'Inscripción cerrada' }}
                 </span>
+              @endif
+
+              @if ($esStaff)
+                <a class="btn btn-primary" href="{{ route('congresos.staff.activities', $congreso) }}">
+                  Gestionar asistencia
+                </a>
               @endif
 
               @if ($postulacionOrganizador)
@@ -81,6 +95,7 @@
                         · {{ $actividad->fecha->format('d/m/Y') }}
                         · {{ substr($actividad->hora_inicio, 0, 5) }}–{{ substr($actividad->hora_fin, 0, 5) }}
                         · {{ $actividad->ubicacion }}
+                        · Lugares disponibles: {{ max(0, $actividad->cupo - $actividad->inscripciones_count) }} de {{ $actividad->cupo }}
                       </span>
                     </li>
                   @endforeach

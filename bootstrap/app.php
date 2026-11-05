@@ -3,6 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Console\Scheduling\Schedule;
+use App\Support\AttendanceWindow;
 
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\EnsureDocente;
@@ -22,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'administrador' => EnsureAdministrador::class,
             'academico' => EnsureAlumnoODocente::class,
         ]);
+    })
+    ->withSchedule(function (Schedule $schedule) {
+        $schedule->call(fn () => AttendanceWindow::expireExpired())->everyTenSeconds();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

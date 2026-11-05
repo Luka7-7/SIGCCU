@@ -313,6 +313,7 @@ class InscripcionCongresoTest extends TestCase
             ->get(route('congresos.activities', $congreso))
             ->assertOk()
             ->assertSee($conferenciaUno->descripcion)
+            ->assertSee('Lugares disponibles: 24 de 25')
             ->assertDontSee($noSeleccionada->descripcion)
             ->assertSee('no se puede modificar')
             ->assertDontSee('Confirmar inscripción al congreso');
@@ -322,6 +323,7 @@ class InscripcionCongresoTest extends TestCase
             ->assertOk()
             ->assertSee('Actividades seleccionadas')
             ->assertSee($conferenciaUno->descripcion)
+            ->assertSee('Lugares disponibles: 24 de 25')
             ->assertDontSee($noSeleccionada->descripcion)
             ->assertDontSee('Gestionar actividades');
 

@@ -7,10 +7,19 @@ use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\DocenteController;
 use App\Http\Controllers\InscripcionCongresoController;
 use App\Http\Controllers\Administracion\RevisionCongresoController;
+use App\Http\Controllers\AsistenciaController;
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
+    Route::get('/congresos/{congreso}/staff/actividades', [DocenteController::class, 'activities'])
+        ->name('congresos.staff.activities');
+    Route::post('/actividades/{actividad}/asistencia/abrir', [AsistenciaController::class, 'open'])
+        ->name('asistencias.open');
+    Route::post('/actividades/{actividad}/asistencia', [AsistenciaController::class, 'store'])
+        ->name('asistencias.store');
+    Route::get('/actividades/{actividad}/asistencia/estado', [AsistenciaController::class, 'status'])
+        ->name('asistencias.status');
 
     Route::middleware('academico')->group(function () {
         Route::get('/congresos', [InscripcionCongresoController::class, 'index'])
