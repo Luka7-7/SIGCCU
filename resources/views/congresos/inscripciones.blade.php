@@ -1,10 +1,9 @@
 <x-layout.main title="Congresos disponibles · SIGCCU">
   <div class="container-xl py-4">
-    <div class="page-header mb-4">
-      <h1 class="page-title">Congresos disponibles</h1>
-      <p class="text-secondary mb-0">
-        Congresos aprobados para la carrera {{ $usuario->carrera?->nombre_carrera ?? 'no especificada' }}.
-      </p>
+
+    <div class="col">
+      <div class="page-pretitle">{{ $usuario->carrera?->nombre_carrera ?? 'no especificada' }}</div>
+      <h1 class="page-title">Explorar Congresos</h1>
     </div>
 
     @if (session('status'))
@@ -128,11 +127,7 @@
         </div>
       </article>
     @empty
-      <div class="card">
-        <div class="card-body text-secondary">
-          No hay congresos aprobados disponibles para tu carrera.
-        </div>
-      </div>
+      <x-empty-state />
     @endforelse
   </div>
 </x-layout.main>
